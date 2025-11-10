@@ -17,7 +17,9 @@ class CardItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 600,
+      width: MediaQuery.of(context).size.width < 800
+          ? null
+          : (MediaQuery.of(context).size.width / 2) - 100,
       margin: EdgeInsets.all(20),
       padding: EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -105,9 +107,10 @@ class ExperienceCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    Size size = MediaQuery.of(context).size;
     return Container(
-      width: 600,
       margin: EdgeInsets.all(10),
+      width: size.width < 800 ? null : (size.width / 2) - 50,
       decoration: BoxDecoration(
         color: Color.fromARGB(255, 7, 255, 234),
         borderRadius: BorderRadius.circular(15),
@@ -496,9 +499,9 @@ class ContactUsContainer extends StatelessWidget {
   final String degree = 'Bachelor of Engineering';
   final String university = 'Panjab University';
   final String githubUrl =
-      'https://github.com/yourprofile'; // Replace with your GitHub URL
+      'https://github.com/vritravaibhav'; // Replace with your GitHub URL
   final String linkedinUrl =
-      'https://linkedin.com/in/yourprofile'; // Replace with your LinkedIn URL
+      'https://www.linkedin.com/in/divyanshu-vaibhav-6a7965202/'; // Replace with your LinkedIn URL
   final String batchYears = '2020-2024';
 
   @override

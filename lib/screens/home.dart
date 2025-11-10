@@ -4,6 +4,7 @@ import 'package:portfolio/constatnts/strings.dart';
 import 'package:portfolio/main.dart';
 import 'package:portfolio/screens/demo.dart';
 import 'package:portfolio/widgets/widgets.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class HomePage extends StatefulWidget {
   @override
@@ -23,221 +24,56 @@ class _HomePageState extends State<HomePage> {
     return Scaffold(
       backgroundColor: Color(0xFF112240), // Dark blue container color
 
-      appBar: ((MediaQuery.of(context).size.width > 640) &&
-              !skills &&
-              !experience &&
-              !projects)
-          ? AppBar(
-              backgroundColor: Colors.transparent,
-              actions: [
-                MouseRegion(
-                    onEnter: (event) {
-                      experience = true;
-                      setState(() {});
-                    },
-                    child: TextButton(
-                        onPressed: () {}, child: Text("Experience"))),
-
-                //  App(),
-
-                MouseRegion(
-                    onEnter: (event) {
-                      projects = true;
-                      setState(() {});
-                    },
-                    child: TextButton(
-                        onPressed: () {},
-                        child: Text(
-                          "Projects",
-                          style: TextStyle(),
-                        ))),
-                MouseRegion(
-                  onEnter: (event) {
-                    skills = true;
-                    setState(() {});
-                  },
-                  child: TextButton(
-                    onPressed: () {},
-                    child: Text("Skills"),
-                  ),
-                ),
-                // TextButton(onPressed: (){}, child: Text("Experience"))
-                // Padding(padding: EdgeInsets.only(left: 20))
-                // App(),
-                SizedBox(
-                  width: MediaQuery.sizeOf(context).width * 0.02,
-                )
-              ],
-              // leadingWidth: 260,
-              // flexibleSpace: Text("lol"),
-              title: Row(
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        title: Row(
+          children: [
+            Text(
+              'Divyanshu Vaibhav',
+              style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFFCCCCCC),
+                  fontSize: 30),
+            ),
+            SizedBox(
+              width: 10,
+            ),
+            Container(
+              decoration: BoxDecoration(
+                  color: Colors.transparent,
+                  borderRadius: BorderRadius.circular(10)),
+              child: Wrap(
                 children: [
-                  Text(
-                    'Divyanshu Vaibhav',
-                    style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFFCCCCCC),
-                        fontSize: 30),
+                  InkWell(
+                    onTap: () {
+                      launchUrl(Uri.parse("https://github.com/vritravaibhav"));
+                    },
+                    child: Padding(
+                      padding: EdgeInsets.only(top: 2),
+                      child: Image.asset(
+                        "assets/github-logo.png",
+                        height: 30,
+                        width: 50,
+                      ),
+                    ),
                   ),
-                  SizedBox(
-                    width: 10,
-                  ),
-                  Container(
-                    decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(10)),
-                    child: Wrap(
-                      children: [
-                        Padding(
-                          padding: EdgeInsets.only(top: 2),
-                          child: Image.asset(
-                            "assets/github-logo.png",
-                            height: 30,
-                            width: 50,
-                          ),
-                        ),
-                        Image.asset(
-                          "assets/logo-linkedin-logo-icon-png-svg.png",
-                          height: 40,
-                          width: 50,
-                        )
-                      ],
+                  InkWell(
+                    onTap: () {
+                      launchUrl(Uri.parse(
+                          "https://www.linkedin.com/in/divyanshu-vaibhav-6a7965202/"));
+                    },
+                    child: Image.asset(
+                      "assets/logo-linkedin-logo-icon-png-svg.png",
+                      height: 40,
+                      width: 50,
                     ),
                   )
                 ],
               ),
             )
-          : (skills)
-              ? AppBar(
-                  actions: [
-                    MouseRegion(
-                      onExit: (event) {
-                        skills = false;
-                        setState(() {});
-                      },
-                      child: Row(children: [
-                        TextButton(
-                          onPressed: () {},
-                          child: Text("Flutter"),
-                        ),
-                        TextButton(
-                          onPressed: () {},
-                          child: Text("Firebase"),
-                        ),
-                        TextButton(
-                          onPressed: () {},
-                          child: Text("Dart"),
-                        ),
-                        TextButton(
-                          onPressed: () {},
-                          child: Text("Others"),
-                        ),
-                        SizedBox(
-                          width: MediaQuery.sizeOf(context).width * 0.02,
-                        )
-                      ]),
-                    )
-                  ],
-                )
-              : projects
-                  ? AppBar(
-                      actions: [
-                        MouseRegion(
-                          onExit: (event) {
-                            projects = false;
-                            setState(() {});
-                          },
-                          child: Row(
-                            children: [
-                              TextButton(
-                                onPressed: () {},
-                                child: Text("InstaClone"),
-                              ),
-                              TextButton(
-                                onPressed: () {},
-                                child: Text("AmazonClone"),
-                              ),
-                              TextButton(
-                                onPressed: () {},
-                                child: Text("Others"),
-                              ),
-                              SizedBox(
-                                width: MediaQuery.sizeOf(context).width * 0.02,
-                              )
-                            ],
-                          ),
-                        )
-                      ],
-                    )
-                  : experience
-                      ? AppBar(
-                          actions: [
-                            MouseRegion(
-                              onExit: (event) {
-                                experience = false;
-                                setState(() {});
-                              },
-                              child: Row(
-                                children: [
-                                  TextButton(
-                                    onPressed: () {},
-                                    child: Text("Outshade company"),
-                                  ),
-                                  TextButton(
-                                    onPressed: () {},
-                                    child: Text("Freelance"),
-                                  ),
-                                  TextButton(
-                                    onPressed: () {},
-                                    child: Text("Others"),
-                                  ),
-                                  SizedBox(
-                                    width:
-                                        MediaQuery.sizeOf(context).width * 0.02,
-                                  )
-                                ],
-                              ),
-                            )
-                          ],
-                        )
-                      : AppBar(
-                          title: Row(
-                            children: [
-                              Text(
-                                'Divyanshu Vaibhav',
-                                style: TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    color: Color(0xFFCCCCCC),
-                                    fontSize: 30),
-                              ),
-                              SizedBox(
-                                width: 10,
-                              ),
-                              Container(
-                                decoration: BoxDecoration(
-                                    color: Colors.white,
-                                    borderRadius: BorderRadius.circular(10)),
-                                child: Wrap(
-                                  children: [
-                                    Padding(
-                                      padding: EdgeInsets.only(top: 2),
-                                      child: Image.asset(
-                                        "assets/github-logo.png",
-                                        height: 30,
-                                        width: 50,
-                                      ),
-                                    ),
-                                    Image.asset(
-                                      "assets/logo-linkedin-logo-icon-png-svg.png",
-                                      height: 40,
-                                      width: 50,
-                                    )
-                                  ],
-                                ),
-                              )
-                            ],
-                          ),
-                        ),
+          ],
+        ),
+      ),
       body: SingleChildScrollView(
         padding: EdgeInsets.all(16),
         child: Column(
