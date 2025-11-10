@@ -3,19 +3,22 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:portfolio/constatnts/strings.dart';
 import 'package:portfolio/widgets/widgets.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:flutter/gestures.dart';
 
 class PortfolioScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: LayoutBuilder(
-        builder: (context, constraints) {
-          if (constraints.maxWidth > 800) {
-            return _buildWideLayout(context);
-          } else {
-            return _buildNarrowLayout(context);
-          }
-        },
+      body: SelectionArea(
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            if (constraints.maxWidth > 800) {
+              return _buildWideLayout(context);
+            } else {
+              return _buildNarrowLayout(context);
+            }
+          },
+        ),
       ),
     );
   }
@@ -36,13 +39,15 @@ class PortfolioScreen extends StatelessWidget {
   }
 
   Widget _buildNarrowLayout(BuildContext context) {
-    return ListView(
-      padding: const EdgeInsets.all(16),
-      children: [
-        _buildLeftColumn(context),
-        const SizedBox(height: 30),
-        _buildRightColumn(context),
-      ],
+    return SingleChildScrollView(
+      child: Column(
+        // padding: const EdgeInsets.all(16),
+        children: [
+          _buildLeftColumn(context),
+          const SizedBox(height: 30),
+          _buildRightColumn(context),
+        ],
+      ),
     );
   }
 
@@ -111,15 +116,36 @@ class PortfolioScreen extends StatelessWidget {
             style: Theme.of(context).textTheme.displaySmall,
           ),
           const SizedBox(height: 10),
-          Text(
-            '+91 9576671336',
-            style: Theme.of(context).textTheme.bodyLarge,
+          SelectableText.rich(
+            TextSpan(
+              text: '+91 9576671336',
+              style: Theme.of(context).textTheme.bodyLarge,
+              recognizer: TapGestureRecognizer()
+                ..onTap = () async {
+                  final uri = Uri(scheme: 'tel', path: '+919576671336');
+                  await launchUrl(uri);
+                },
+            ),
           ),
-          Text(
-            'divaibhavyanshu@gmail.com',
-            style: Theme.of(context).textTheme.bodyLarge,
+          SizedBox(height: 10),
+          SelectableText.rich(
+            TextSpan(
+              text: 'divaibhavyanshu@gmail.com',
+              style: Theme.of(context).textTheme.bodyLarge,
+              recognizer: TapGestureRecognizer()
+                ..onTap = () async {
+                  final uri = Uri.parse(
+                    'https://mail.google.com/mail/?view=cm&fs=1&to=divaibhavyanshu@gmail.com',
+                  );
+                  await launchUrl(
+                    uri,
+                    mode: LaunchMode
+                        .externalApplication, // ✅ opens new tab on web
+                  );
+                },
+            ),
           ),
-          const SizedBox(height: 30),
+          const SizedBox(height: 10),
           Text(
             'Skills',
             style: Theme.of(context).textTheme.displaySmall,
@@ -150,101 +176,105 @@ class PortfolioScreen extends StatelessWidget {
   }
 
   Widget _buildRightColumn(BuildContext context) {
-    return ListView(
-      padding: const EdgeInsets.all(16),
-      children: [
-        Text(
-          'About Me',
-          style: Theme.of(context).textTheme.displaySmall,
-        ),
-        const SizedBox(height: 10),
-        Text(
-          about,
-          style: Theme.of(context).textTheme.bodyLarge,
-        ),
-        const SizedBox(height: 30),
-        Text(
-          'Experience',
-          style: Theme.of(context).textTheme.displaySmall,
-        ),
-        const SizedBox(height: 10),
-        GridView.count(
-          crossAxisCount: 2,
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          children: [
-            ExperienceCard(
-              imagePath: "dfsd",
-              title: "Internship",
-              companyName: "Outshade Digital Media",
-              description: outshadeExperience,
-              duration: "May 2024 - August 2024",
-            ),
-            ExperienceCard(
-              imagePath: "dfsd",
-              title: "Freelance",
-              companyName: "Aypex pvt ltd",
-              description: aypexExperience,
-              duration: "October 2023 - currenly working",
-            ),
-            ExperienceCard(
-              imagePath: "dfsd",
-              title: "Flutter Developer",
-              companyName: "Connect 4 digial India",
-              description: c4dexp,
-              duration: "April 2024 - currently working",
-            ),
-            ExperienceCard(
-              imagePath: "dfsd",
-              title: "Flutter Developer",
-              companyName: "Electromotion E-vidyut",
-              description: electromotionExperience,
-              duration: "Placeholder duration",
-            ),
-          ],
-        ),
-        const SizedBox(height: 30),
-        Text(
-          'Projects',
-          style: Theme.of(context).textTheme.displaySmall,
-        ),
-        const SizedBox(height: 20),
-        GridView.count(
-          crossAxisCount: 2,
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          children: [
-            CardItem(
-              time: "18 months ago",
-              heading: "Fullstack Instagram Clone using Flutter and Firebase",
-              title: 'Instagram with chat and Dating Option',
-              descriptiom: instaCloneDec,
-            ),
-            CardItem(
-              time: "15 months ago",
-              heading: 'Amazon Clone',
-              title: 'Amazon clone using Node.js',
-              descriptiom:
-                  'I developed a Flutter-based Amazon app using Express.js, Node.js, and MongoDB. The project features authorization with JSON Web Token and Node.js, and it uses MongoDB for data storage. I implemented CRUD operations in the database using Express.js. The project was built using Node.js, Express.js, Dart, and Flutter',
-            ),
-            CardItem(
-              time: "1 months ago",
-              heading: 'Multiuser video call using WEBRTC and firebase',
-              title: 'Multiuser video call',
-              descriptiom: webrtcdec,
-            )
-          ],
-        ),
-        const SizedBox(height: 30),
-        Text(
-          'Contact Us',
-          style: Theme.of(context).textTheme.displaySmall,
-        ),
-        const SizedBox(height: 20),
-        ContactUsForm(),
-        const SizedBox(height: 20),
-        ContactUsContainer(),
-      ],
+    return SizedBox(
+      height: 600,
+      child: ListView(
+        padding: const EdgeInsets.all(16),
+        children: [
+          Text(
+            'About Me',
+            style: Theme.of(context).textTheme.displaySmall,
+          ),
+          const SizedBox(height: 10),
+          Text(
+            about,
+            style: Theme.of(context).textTheme.bodyLarge,
+          ),
+          const SizedBox(height: 30),
+          Text(
+            'Experience',
+            style: Theme.of(context).textTheme.displaySmall,
+          ),
+          const SizedBox(height: 10),
+          Wrap(
+            // crossAxisCount: MediaQuery.of(context).size.width > 800 ? 2 : 1,
+            // childAspectRatio: 0.9,
+            // shrinkWrap: true,
+            // physics: const NeverScrollableScrollPhysics(),
+            children: [
+              ExperienceCard(
+                imagePath: "dfsd",
+                title: "Internship",
+                companyName: "Outshade Digital Media",
+                description: outshadeExperience,
+                duration: "May 2023 - August 2023",
+              ),
+              ExperienceCard(
+                imagePath: "dfsd",
+                title: "Freelance",
+                companyName: "Aypex pvt ltd",
+                description: aypexExperience,
+                duration: "October 2023 - March 2023",
+              ),
+              ExperienceCard(
+                imagePath: "dfsd",
+                title: "Flutter Developer",
+                companyName: "Connect 4 digial India",
+                description: c4dexp,
+                duration: "April 2024 - August 2024",
+              ),
+              ExperienceCard(
+                imagePath: "dfsd",
+                title: "Flutter Developer",
+                companyName: "Electromotion E-vidyut",
+                description: electromotionExperience,
+                duration: "September 2024 - present",
+              ),
+            ],
+          ),
+          const SizedBox(height: 30),
+          Text(
+            'Projects',
+            style: Theme.of(context).textTheme.displaySmall,
+          ),
+          const SizedBox(height: 20),
+          Wrap(
+            // crossAxisCount: MediaQuery.of(context).size.width > 800 ? 2 : 1,
+            // shrinkWrap: true,
+            // physics: const NeverScrollableScrollPhysics(),
+            children: [
+              CardItem(
+                time: "18 months ago",
+                heading: "Fullstack Instagram Clone using Flutter and Firebase",
+                title: 'Instagram with chat and Dating Option',
+                descriptiom: instaCloneDec,
+              ),
+              CardItem(
+                time: "15 months ago",
+                heading: 'Amazon Clone',
+                title: 'Amazon clone using Node.js',
+                descriptiom:
+                    'I developed a Flutter-based Amazon app using Express.js, Node.js, and MongoDB. The project features authorization with JSON Web Token and Node.js, and it uses MongoDB for data storage. I implemented CRUD operations in the database using Express.js. The project was built using Node.js, Express.js, Dart, and Flutter',
+              ),
+              CardItem(
+                time: "1 months ago",
+                heading: 'Multiuser video call using WEBRTC and firebase',
+                title: 'Multiuser video call',
+                descriptiom: webrtcdec,
+              )
+            ],
+          ),
+          const SizedBox(height: 30),
+          Text(
+            'Contact Us',
+            style: Theme.of(context).textTheme.displaySmall,
+          ),
+          const SizedBox(height: 20),
+          ContactUsForm(),
+          const SizedBox(height: 20),
+          ContactUsContainer(),
+        ],
+      ),
     );
   }
 }
