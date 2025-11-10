@@ -23,7 +23,7 @@ class CardItem extends StatelessWidget {
       margin: EdgeInsets.all(20),
       padding: EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Color.fromARGB(255, 7, 255, 234),
+        color: Theme.of(context).colorScheme.secondary,
         borderRadius: BorderRadius.circular(15),
         boxShadow: [
           BoxShadow(
@@ -41,7 +41,7 @@ class CardItem extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               CircleAvatar(
-                backgroundColor: Colors.black,
+                backgroundColor: Theme.of(context).colorScheme.tertiary,
                 radius: 20,
                 child: Icon(
                   Icons.flutter_dash,
@@ -50,11 +50,7 @@ class CardItem extends StatelessWidget {
               ),
               Text(
                 time,
-                style: TextStyle(
-                  color: Colors.grey,
-                  fontSize: 12,
-                  fontWeight: FontWeight.bold,
-                ),
+                style: Theme.of(context).textTheme.bodyMedium,
               ),
             ],
           ),
@@ -62,27 +58,17 @@ class CardItem extends StatelessWidget {
           // Middle Texts
           Text(
             title,
-            style: TextStyle(
-              color: Colors.grey[600],
-              fontSize: 14,
-            ),
+            style: Theme.of(context).textTheme.bodyMedium,
           ),
           SizedBox(height: 5),
           Text(
             heading,
-            style: TextStyle(
-              color: Colors.black,
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-            ),
+            style: Theme.of(context).textTheme.headlineMedium,
           ),
           SizedBox(height: 5),
           Text(
             descriptiom,
-            style: TextStyle(
-              color: Colors.grey[600],
-              fontSize: 14,
-            ),
+            style: Theme.of(context).textTheme.bodyMedium,
           ),
         ],
       ),
@@ -112,7 +98,7 @@ class ExperienceCard extends StatelessWidget {
       margin: EdgeInsets.all(10),
       width: size.width < 800 ? null : (size.width / 2) - 50,
       decoration: BoxDecoration(
-        color: Color.fromARGB(255, 7, 255, 234),
+        color: Theme.of(context).colorScheme.secondary,
         borderRadius: BorderRadius.circular(15),
         boxShadow: [
           BoxShadow(
@@ -125,18 +111,6 @@ class ExperienceCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Image Section
-          ClipRRect(
-            borderRadius: BorderRadius.only(
-              topLeft: Radius.circular(15),
-              topRight: Radius.circular(15),
-            ),
-            // child: Container(
-            //   color: Colors.transparent,
-            //   height: 150,
-            //   width: double.infinity,
-            // ),
-          ),
           Padding(
             padding: const EdgeInsets.all(15.0),
             child: Column(
@@ -146,38 +120,24 @@ class ExperienceCard extends StatelessWidget {
                   children: [
                     Text(
                       title,
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.black87,
-                      ),
+                      style: Theme.of(context).textTheme.headlineMedium,
                     ),
                     Expanded(child: SizedBox()),
                     Text(
                       duration,
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.grey[500],
-                      ),
+                      style: Theme.of(context).textTheme.bodyMedium,
                     ),
                   ],
                 ),
                 SizedBox(height: 5),
                 Text(
                   companyName,
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                    color: Colors.grey[600],
-                  ),
+                  style: Theme.of(context).textTheme.bodyLarge,
                 ),
                 SizedBox(height: 10),
                 Text(
                   description,
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.black,
-                  ),
+                  style: Theme.of(context).textTheme.bodyMedium,
                 ),
                 SizedBox(height: 15),
               ],
@@ -189,131 +149,6 @@ class ExperienceCard extends StatelessWidget {
   }
 }
 
-// class ContactUsForm extends StatefulWidget {
-//   @override
-//   _ContactUsFormState createState() => _ContactUsFormState();
-// }
-
-// class _ContactUsFormState extends State<ContactUsForm> {
-//   final _formKey = GlobalKey<FormState>();
-
-//   @override
-//   Widget build(BuildContext context) {
-//     return Container(
-//       width: 350,
-//       padding: EdgeInsets.all(20),
-//       decoration: BoxDecoration(
-//         color: Colors.white,
-//         borderRadius: BorderRadius.circular(15),
-//         boxShadow: [
-//           BoxShadow(
-//             color: Colors.black.withOpacity(0.1),
-//             blurRadius: 10,
-//             offset: Offset(0, 5),
-//           ),
-//         ],
-//       ),
-//       child: Form(
-//         key: _formKey,
-//         child: Column(
-//           crossAxisAlignment: CrossAxisAlignment.start,
-//           children: [
-//             // Contact Us Title
-//             Text(
-//               'Contact Us',
-//               style: TextStyle(
-//                 fontSize: 24,
-//                 fontWeight: FontWeight.bold,
-//                 color: Colors.black87,
-//               ),
-//             ),
-//             SizedBox(height: 20),
-
-//             // Name Field
-//             TextFormField(
-//               decoration: InputDecoration(
-//                 labelText: 'Name',
-//                 border: OutlineInputBorder(
-//                   borderRadius: BorderRadius.circular(8),
-//                 ),
-//               ),
-//               validator: (value) {
-//                 if (value == null || value.isEmpty) {
-//                   return 'Please enter your name';
-//                 }
-//                 return null;
-//               },
-//             ),
-//             SizedBox(height: 15),
-
-//             // Email Field
-//             TextFormField(
-//               decoration: InputDecoration(
-//                 labelText: 'Email',
-//                 border: OutlineInputBorder(
-//                   borderRadius: BorderRadius.circular(8),
-//                 ),
-//               ),
-//               validator: (value) {
-//                 if (value == null || value.isEmpty) {
-//                   return 'Please enter your email';
-//                 } else if (!RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(value)) {
-//                   return 'Please enter a valid email';
-//                 }
-//                 return null;
-//               },
-//             ),
-//             SizedBox(height: 15),
-
-//             // Message Field
-//             TextFormField(
-//               maxLines: 4,
-//               decoration: InputDecoration(
-//                 labelText: 'Message',
-//                 border: OutlineInputBorder(
-//                   borderRadius: BorderRadius.circular(8),
-//                 ),
-//               ),
-//               validator: (value) {
-//                 if (value == null || value.isEmpty) {
-//                   return 'Please enter your message';
-//                 }
-//                 return null;
-//               },
-//             ),
-//             SizedBox(height: 20),
-
-//             // Submit Button
-//             SizedBox(
-//               width: double.infinity,
-//               child: ElevatedButton(
-//                 onPressed: () {
-//                   if (_formKey.currentState?.validate() == true) {
-//                     // Process data
-//                     ScaffoldMessenger.of(context).showSnackBar(
-//                       SnackBar(content: Text('Submitting form')),
-//                     );
-//                   }
-//                 },
-//                 style: ElevatedButton.styleFrom(
-//                   // primary: Colors.blueAccent,
-//                   padding: EdgeInsets.symmetric(vertical: 15),
-//                   shape: RoundedRectangleBorder(
-//                     borderRadius: BorderRadius.circular(8),
-//                   ),
-//                 ),
-//                 child: Text(
-//                   'Submit',
-//                   style: TextStyle(fontSize: 16),
-//                 ),
-//               ),
-//             ),
-//           ],
-//         ),
-//       ),
-//     );
-//   }
-// }
 class ContactUsForm extends StatefulWidget {
   @override
   _ContactUsFormState createState() => _ContactUsFormState();
@@ -331,11 +166,11 @@ class _ContactUsFormState extends State<ContactUsForm> {
       width: 350,
       padding: EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Color(0xFF112240), // Dark blue container color
+        color: Theme.of(context).colorScheme.secondary,
         borderRadius: BorderRadius.circular(15),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.3),
+            color: Colors.black.withOpacity(0.1),
             blurRadius: 10,
             offset: Offset(0, 5),
           ),
@@ -350,11 +185,7 @@ class _ContactUsFormState extends State<ContactUsForm> {
             Center(
               child: Text(
                 'Get in touch',
-                style: TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.tealAccent[100], // Light text color
-                ),
+                style: Theme.of(context).textTheme.displaySmall,
               ),
             ),
             SizedBox(height: 20),
@@ -362,12 +193,8 @@ class _ContactUsFormState extends State<ContactUsForm> {
             // Name Field
             TextFormField(
               controller: _name,
-              style: TextStyle(color: Colors.white),
               decoration: InputDecoration(
                 labelText: 'Name',
-                labelStyle: TextStyle(color: Colors.grey[400]),
-                filled: true,
-                fillColor: Color(0xFF233554), // Slightly lighter blue
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
                 ),
@@ -384,12 +211,8 @@ class _ContactUsFormState extends State<ContactUsForm> {
             // Email Field
             TextFormField(
               controller: _email,
-              style: TextStyle(color: Colors.white),
               decoration: InputDecoration(
                 labelText: 'Email',
-                labelStyle: TextStyle(color: Colors.grey[400]),
-                filled: true,
-                fillColor: Color(0xFF233554),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
                 ),
@@ -408,12 +231,8 @@ class _ContactUsFormState extends State<ContactUsForm> {
             // Subject Field
             TextFormField(
               controller: _subject,
-              style: TextStyle(color: Colors.white),
               decoration: InputDecoration(
                 labelText: 'Subject',
-                labelStyle: TextStyle(color: Colors.grey[400]),
-                filled: true,
-                fillColor: Color(0xFF233554),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
                 ),
@@ -431,12 +250,8 @@ class _ContactUsFormState extends State<ContactUsForm> {
             TextFormField(
               controller: _descriptiom,
               maxLines: 4,
-              style: TextStyle(color: Colors.white),
               decoration: InputDecoration(
                 labelText: 'Message',
-                labelStyle: TextStyle(color: Colors.grey[400]),
-                filled: true,
-                fillColor: Color(0xFF233554),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
                 ),
@@ -473,7 +288,7 @@ class _ContactUsFormState extends State<ContactUsForm> {
                   }
                 },
                 style: ElevatedButton.styleFrom(
-                  // primary: Colors.blueAccent,
+                  backgroundColor: Theme.of(context).colorScheme.tertiary,
                   padding: EdgeInsets.symmetric(vertical: 15),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(8),
@@ -481,7 +296,9 @@ class _ContactUsFormState extends State<ContactUsForm> {
                 ),
                 child: Text(
                   'Send',
-                  style: TextStyle(fontSize: 16, color: Colors.black),
+                  style: TextStyle(
+                      fontSize: 16,
+                      color: Theme.of(context).colorScheme.onPrimary),
                 ),
               ),
             ),
@@ -513,6 +330,7 @@ class ContactUsContainer extends StatelessWidget {
         padding: const EdgeInsets.all(16.0),
         child: Card(
           elevation: 4.0,
+          color: Theme.of(context).colorScheme.secondary,
           shape:
               RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
           child: Padding(
@@ -522,18 +340,20 @@ class ContactUsContainer extends StatelessWidget {
               children: [
                 Text(
                   name,
-                  style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                  style: Theme.of(context).textTheme.displaySmall,
                 ),
                 SizedBox(height: 10),
                 Row(
                   children: [
-                    Icon(Icons.phone),
+                    Icon(Icons.phone,
+                        color: Theme.of(context).colorScheme.tertiary),
                     SizedBox(width: 8),
                     GestureDetector(
                       onTap: () => launchUrl(Uri.parse('tel:$phoneNumber')),
                       child: Text(
                         phoneNumber,
-                        style: TextStyle(fontSize: 16, color: Colors.blue),
+                        style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                            color: Theme.of(context).colorScheme.tertiary),
                       ),
                     ),
                   ],
@@ -541,13 +361,15 @@ class ContactUsContainer extends StatelessWidget {
                 SizedBox(height: 10),
                 Row(
                   children: [
-                    Icon(Icons.email),
+                    Icon(Icons.email,
+                        color: Theme.of(context).colorScheme.tertiary),
                     SizedBox(width: 8),
                     GestureDetector(
                       onTap: () => launchUrl(Uri.parse('mailto:$email')),
                       child: Text(
                         email,
-                        style: TextStyle(fontSize: 16, color: Colors.blue),
+                        style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                            color: Theme.of(context).colorScheme.tertiary),
                       ),
                     ),
                   ],
@@ -555,34 +377,37 @@ class ContactUsContainer extends StatelessWidget {
                 SizedBox(height: 10),
                 Row(
                   children: [
-                    Icon(Icons.school),
+                    Icon(Icons.school,
+                        color: Theme.of(context).colorScheme.tertiary),
                     SizedBox(width: 8),
                     Text(
                       degree,
-                      style: TextStyle(fontSize: 16),
+                      style: Theme.of(context).textTheme.bodyLarge,
                     ),
                   ],
                 ),
                 SizedBox(height: 5),
                 Text(
                   university,
-                  style: TextStyle(fontSize: 16),
+                  style: Theme.of(context).textTheme.bodyLarge,
                 ),
                 SizedBox(height: 5),
                 Text(
                   batchYears,
-                  style: TextStyle(fontSize: 16),
+                  style: Theme.of(context).textTheme.bodyLarge,
                 ),
                 SizedBox(height: 10),
                 Row(
                   children: [
-                    Icon(Icons.code),
+                    Icon(Icons.code,
+                        color: Theme.of(context).colorScheme.tertiary),
                     SizedBox(width: 8),
                     GestureDetector(
                       onTap: () => launchUrl(Uri.parse(githubUrl)),
                       child: Text(
                         'GitHub Profile',
-                        style: TextStyle(fontSize: 16, color: Colors.blue),
+                        style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                            color: Theme.of(context).colorScheme.tertiary),
                       ),
                     ),
                   ],
@@ -590,13 +415,15 @@ class ContactUsContainer extends StatelessWidget {
                 SizedBox(height: 10),
                 Row(
                   children: [
-                    Icon(Icons.link),
+                    Icon(Icons.link,
+                        color: Theme.of(context).colorScheme.tertiary),
                     SizedBox(width: 8),
                     GestureDetector(
                       onTap: () => launchUrl(Uri.parse(linkedinUrl)),
                       child: Text(
                         'LinkedIn Profile',
-                        style: TextStyle(fontSize: 16, color: Colors.blue),
+                        style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                            color: Theme.of(context).colorScheme.tertiary),
                       ),
                     ),
                   ],
@@ -609,3 +436,4 @@ class ContactUsContainer extends StatelessWidget {
     );
   }
 }
+

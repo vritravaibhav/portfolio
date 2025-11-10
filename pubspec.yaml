@@ -34,6 +34,8 @@ dependencies:
   flutter:
     sdk: flutter
   flutter_screenutil: ^5.9.0
+  font_awesome_flutter: ^10.9.1
+  google_fonts: ^6.3.2
   url_launcher: ^6.3.0
 
 dev_dependencies:
