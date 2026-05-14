@@ -19,7 +19,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Divyanshu Vaibhav',
-      theme: AppTheme.lightTheme,
+      theme: AppTheme.darkTheme,
       home: HomePage(),
     );
   }

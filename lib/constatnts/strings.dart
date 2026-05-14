@@ -1,26 +1,50 @@
 const String about =
-    "I'm a passionate and results-oriented Flutter developer with a strong background in building beautiful and performant mobile applications. I have a proven ability to learn quickly and adapt to new technologies. I'm eager to contribute my skills and enthusiasm to a challenging and rewarding role.";
+    "Software Engineer specializing in Flutter, Android Native (NDK/JNI), and real-time systems. "
+    "Currently at Longfloat Information Technology, Dubai — building hardware-accelerated rendering "
+    "pipelines and bridging C++/JNI to Flutter for measurable cross-platform performance gains. "
+    "Previously led a 5-member team delivering 9+ production apps at Electromotion E-vidyut. "
+    "Contributed to 30+ production applications across Flutter, Firebase, WebRTC, and Android Native.";
 
-const String outshadeExperience =
-    "Collaborated on UI design using Flutter and Figma, integrated APIs, managed state, and resolved bugs. Gained hands-on experience with Firebase, added features to notifications";
-
-const String aypexExperience =
-    "As a freelance Flutter developer for Aypex, I was responsible for the end-to-end development of a new mobile app. I worked closely with the client to gather requirements, design the UI/UX, and develop the app from scratch. I was also responsible for deploying the app to the Google Play Store and Apple App Store.";
-
-const String c4dexp =
-    "Developed and integrated a custom solution using the WooCommerce REST API to enhance e-commerce functionalities and used BLoC state management for a better user experience within a Flutter application. Integrated the STRIPE SDK as a payment gateway. Developed and integrated WebRTC for peer-to-peer audio and video communication, ensuring secure and reliable data transmission using ICE, STUN, and TURN servers. Handled signaling using WebSockets. Developed and maintained mobile apps using Flutter and Figma. Designed a Firebase database to simplify CRUD operations.";
-
-const String instaCloneDec =
-    'Developed a Flutter-based Instagram clone, a platform that enables users to share photos, follow, like, and comment on posts. Implemented user authentication and authorization using FireAuth technology. Designed and developed the frontend interface to closely mimic Instagram\'s user experience. Utilized Firebase to efficiently store and access user data, posts, and interactions. Technology Used: Flutter, Firebase, Dart.';
-
-const String webrtcdec =
-    'Developed a dynamic MultiUser Video Call system using WebRTC with Firebase for signaling. Implemented an algorithm where each new user creates a peer connections for old user and generates an offer that is added to the Firebase document. Existing users access the new offer from Firebase, generate an answer, and establish a connection with the new peer. Technology Used: Flutter, Firebase, Dart.';
-
-const String amazonCloneDec =
-    'A Flutter-based project using Express.js, Node.js, and MongoDB. Implemented authorization using JSON Web Token and Node.js. Built CRUD functionality using Express.js, Used MongoDB to store data. Technology Used: Node.js, Express.js, Dart, Flutter.';
-
-const String aamchaChalakDec =
-    'Developed a Aamcha auto ride-booking application allowing users to book rides, similar to Uber. Integrated OpenStreetMap API for polypoint tracking.';
+const String longfloatExperience =
+    "Architected hardware-accelerated rendering pipelines on Android Native (NDK/JNI), cutting UI "
+    "frame-drop rate by 40% by offloading graphics operations to the GPU. Built C++/JNI bridge modules "
+    "to expose Android hardware APIs to Flutter, enabling measurable cross-platform performance gains "
+    "without sacrificing portability. Resolved critical memory leaks and race conditions in production "
+    "Flutter apps, reducing crash rates by 35%.";
 
 const String electromotionExperience =
-    "Developed and maintained more than seven Flutter applications independently, integrating Firebase and using Provider, BLoC and riverpod for state management. Designed and built the Krishigati App, enabling users to track their vehicle’s battery status, faults, and errors. Integrated OpenStreetMap API for polypoint tracking on Street View. Developed a full-fledged e-commerce platform for purchasing Krishigati-manufactured tractors and implemented an AI chatbot using Conversational Dialogflow. Built a Aamcha chalak ride-management app for captains, enabling ride acceptance, navigation assistance, and earnings tracking. Developed a Aamcha auto ride-booking application allowing users to book rides, similar to Uber and Rapido, incorporating real-time tracking and seamless payment integration.";
+    "Led a 5-member development team to deliver 9+ production Flutter apps using BLoC, Riverpod, and "
+    "Provider. Built the Aamcha Chalak captain app and Aamcha Auto rider app — a production-ready "
+    "Uber/Rapido-style ride-hailing platform. Engineered a Google Maps routing engine with tile-caching, "
+    "reducing map API costs by 85% and total infrastructure spend by over 6×. Improved crash-free rate "
+    "from 67% to 94% via Firebase Crashlytics; eliminated top-5 ANR and fatal exception patterns. "
+    "Shipped A/B Testing, Remote Config (OTA feature flags), and FCM push campaigns. Developed "
+    "native-level Flutter plugins for battery management, overlay display, and geolocation with "
+    "boot-time initialization and foreground service support.";
+
+const String c4dexp =
+    "Integrated WebRTC for P2P audio/video, configuring ICE/STUN/TURN and WebSocket signaling for "
+    "low-latency, encrypted data channels. Integrated 130+ WooCommerce REST API endpoints and Stripe "
+    "SDK payment gateway within a Flutter e-commerce app; managed state with BLoC for high-performance UX.";
+
+const String outshadeExperience =
+    "Built UI components with Flutter and Figma, integrated third-party REST APIs, and enhanced "
+    "Firebase push notification features.";
+
+const String p2pFileTransferDec =
+    "Chrome Extension built with Flutter (WebAssembly) that opens direct WebRTC data channels between "
+    "peers — no server relay — achieving near-link-saturation transfer speeds. Designed a streaming "
+    "disk-write architecture (chunked transfers + Web Streams API) supporting files up to 1 TB with "
+    "zero full-payload RAM buffering. Checkpoint-based resumable transfers with SHA-256 chunk "
+    "verification ensure seamless recovery from dropped connections or browser restarts. "
+    "Stack: Flutter (Wasm), Dart, WebRTC Data Channels, JS Interop, STUN/TURN servers.";
+
+const String webrtcdec =
+    "Mesh-topology multi-peer video conferencing with zero-server Firebase signaling. Each joining "
+    "peer auto-generates WebRTC offers for all existing participants via Firebase — no dedicated "
+    "signaling server required. Stack: Flutter, Firebase Realtime Database, Dart, WebRTC.";
+
+const String instaCloneDec =
+    "Feature-complete social platform with Firebase Auth, Firestore, and Storage backend. "
+    "Instagram-faithful UX with infinite scroll, real-time Firestore listeners, likes, comments, "
+    "and follows. Stack: Flutter, Firebase (Auth, Firestore, Storage), Dart.";
