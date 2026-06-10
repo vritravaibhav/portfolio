@@ -60,7 +60,7 @@ class AppTheme {
         height: 1.7,
       ),
       bodyMedium: GoogleFonts.ibmPlexSans(
-        color: textMuted,
+        color: textPrimary,
         fontSize: 13,
         height: 1.7,
       ),
