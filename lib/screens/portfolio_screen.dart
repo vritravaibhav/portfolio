@@ -990,7 +990,7 @@ class _GlowText extends StatelessWidget {
 }
 
 class _SocialBtn extends StatefulWidget {
-  final IconData icon;
+  final FaIconData icon;
   final String label;
   final String url;
 
