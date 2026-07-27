@@ -1,50 +1,78 @@
 const String about =
-    "Software Engineer specializing in Flutter, Android Native (NDK/JNI), and real-time systems. "
-    "Currently at Longfloat Information Technology, Dubai — building hardware-accelerated rendering "
-    "pipelines and bridging C++/JNI to Flutter for measurable cross-platform performance gains. "
-    "Previously led a 5-member team delivering 9+ production apps at Electromotion E-vidyut. "
-    "Contributed to 30+ production applications across Flutter, Firebase, WebRTC, and Android Native.";
+    "Software Engineer building Spring Boot backends and the Flutter clients that consume them. "
+    "Currently at Longfloat Information Technology, Dubai — designing REST microservices with Spring Data JPA "
+    "and Hibernate, securing them with stateless JWT auth, and dropping down to Android Native (NDK/JNI) for "
+    "hardware-accelerated rendering. Previously architected the backend for a production ride-hailing platform "
+    "at Electromotion E-vidyut while leading a 5-member team delivering 9+ production Flutter apps.";
 
-const String longfloatExperience =
-    "Architected hardware-accelerated rendering pipelines on Android Native (NDK/JNI), cutting UI "
-    "frame-drop rate by 40% by offloading graphics operations to the GPU. Built C++/JNI bridge modules "
-    "to expose Android hardware APIs to Flutter, enabling measurable cross-platform performance gains "
-    "without sacrificing portability. Resolved critical memory leaks and race conditions in production "
-    "Flutter apps, reducing crash rates by 35%.";
+// ─── Experience ───────────────────────────────────────────────────────────────
 
-const String electromotionExperience =
-    "Led a 5-member development team to deliver 9+ production Flutter apps using BLoC, Riverpod, and "
-    "Provider. Built the Aamcha Chalak captain app and Aamcha Auto rider app — a production-ready "
-    "Uber/Rapido-style ride-hailing platform. Engineered a Google Maps routing engine with tile-caching, "
-    "reducing map API costs by 85% and total infrastructure spend by over 6×. Improved crash-free rate "
-    "from 67% to 94% via Firebase Crashlytics; eliminated top-5 ANR and fatal exception patterns. "
-    "Shipped A/B Testing, Remote Config (OTA feature flags), and FCM push campaigns. Developed "
-    "native-level Flutter plugins for battery management, overlay display, and geolocation with "
-    "boot-time initialization and foreground service support.";
+const List<String> longfloatExperience = [
+  "Designed and developed Spring Boot REST microservices (Spring Data JPA, Hibernate, Flyway migrations) "
+      "powering AI features and core backend APIs consumed by Flutter clients.",
+  "Implemented stateless JWT authentication and role-based access control with Spring Security, plus "
+      "centralized exception handling, DTO mapping, and request validation (Bean Validation).",
+  "Wrote unit and integration tests with JUnit 5 and Mockito; documented endpoints with Swagger/OpenAPI "
+      "and containerized services with Docker for consistent environments.",
+  "Architected hardware-accelerated rendering pipelines on Android Native (NDK/JNI), cutting UI frame-drop "
+      "rate by 40%; built C++/JNI bridges exposing hardware APIs to Flutter.",
+  "Resolved critical memory leaks and race conditions in production Flutter apps, reducing crash rates by 35%.",
+];
 
-const String c4dexp =
-    "Integrated WebRTC for P2P audio/video, configuring ICE/STUN/TURN and WebSocket signaling for "
-    "low-latency, encrypted data channels. Integrated 130+ WooCommerce REST API endpoints and Stripe "
-    "SDK payment gateway within a Flutter e-commerce app; managed state with BLoC for high-performance UX.";
+const List<String> electromotionExperience = [
+  "Designed Spring Boot backend services for a production ride-hailing platform — trip lifecycle, fare "
+      "calculation, and driver–rider matching — with layered architecture (Controller–Service–Repository).",
+  "Optimized JPA/MySQL indexing and query design for low-latency geo queries; profiled and eliminated N+1 "
+      "query patterns to keep matching latency low under load.",
+  "Built a Google Maps routing engine and server-side tile-caching layer, reducing map API costs by 85% "
+      "and total infrastructure spend by over 6×.",
+  "Developed 7+ native plugins (Android/iOS) for battery, overlay display, and geolocation to support the apps.",
+  "Led a 5-member team delivering 9+ production Flutter apps, including the Aamcha Chalak captain app and "
+      "Aamcha Auto rider app (Uber/Rapido-style).",
+  "Improved crash-free rate from 67% to 94% via Firebase Crashlytics; shipped A/B Testing, Remote Config, "
+      "and FCM campaigns to decouple releases from launches.",
+];
 
-const String outshadeExperience =
-    "Built UI components with Flutter and Figma, integrated third-party REST APIs, and enhanced "
-    "Firebase push notification features.";
+const List<String> c4dexp = [
+  "Integrated WebRTC P2P audio/video — ICE/STUN/TURN configuration and WebSocket signaling for low-latency, "
+      "encrypted data channels.",
+  "Integrated 130+ WooCommerce REST APIs and Stripe SDK payments within Flutter apps; managed state with BLoC.",
+];
 
-const String p2pFileTransferDec =
-    "Chrome Extension built with Flutter (WebAssembly) that opens direct WebRTC data channels between "
-    "peers — no server relay — achieving near-link-saturation transfer speeds. Designed a streaming "
-    "disk-write architecture (chunked transfers + Web Streams API) supporting files up to 1 TB with "
-    "zero full-payload RAM buffering. Checkpoint-based resumable transfers with SHA-256 chunk "
-    "verification ensure seamless recovery from dropped connections or browser restarts. "
-    "Stack: Flutter (Wasm), Dart, WebRTC Data Channels, JS Interop, STUN/TURN servers.";
+const List<String> outshadeExperience = [
+  "Built UI components with Flutter from Figma designs.",
+  "Integrated third-party REST APIs into production Flutter screens.",
+  "Enhanced Firebase push notification features.",
+];
 
-const String webrtcdec =
-    "Mesh-topology multi-peer video conferencing with zero-server Firebase signaling. Each joining "
-    "peer auto-generates WebRTC offers for all existing participants via Firebase — no dedicated "
-    "signaling server required. Stack: Flutter, Firebase Realtime Database, Dart, WebRTC.";
+// ─── Projects ─────────────────────────────────────────────────────────────────
 
-const String instaCloneDec =
-    "Feature-complete social platform with Firebase Auth, Firestore, and Storage backend. "
-    "Instagram-faithful UX with infinite scroll, real-time Firestore listeners, likes, comments, "
-    "and follows. Stack: Flutter, Firebase (Auth, Firestore, Storage), Dart.";
+const List<String> salesPilotDec = [
+  "Built the Spring Boot backend — REST APIs for contacts, templates, campaigns, and send-tracking history "
+      "— with Spring Data JPA persistence and Gmail/SMTP integration for one-click outreach.",
+  "Orchestrated multiple AI agents (LLM APIs) to create and edit HTML email templates — one agent drafts "
+      "copy, another refines layout — with live preview before send.",
+  "Developed a lightweight CRM layer: an embedded in-app browser auto-captures email IDs from visited pages, "
+      "organized into contact profiles with interaction history, deal stage, and follow-up status.",
+  "Added an AI sales advisor that analyzes campaign performance and engagement (opens, replies, stage "
+      "drop-offs) and recommends who to follow up with, when, and with which template.",
+];
+
+const List<String> droopItDec = [
+  "Built real-time group chat on a Spring Boot WebSocket (STOMP) backend — message persistence via Spring "
+      "Data JPA, delivery/read receipts, and multi-room support for project teams.",
+  "Implemented an AI project manager that breaks a goal into tasks, assigns them by workload, and follows "
+      "up for progress via scheduled jobs (Spring Scheduler) and FCM notifications.",
+  "Engineered serverless P2P file transfer over WebRTC data channels (Chrome Extension, Flutter Wasm) — "
+      "chunked streaming writes up to 1 TB, checkpoint-based resume, SHA-256 chunk verification.",
+];
+
+// ─── Open source ──────────────────────────────────────────────────────────────
+
+const List<String> instaVideoDownloaderDec = [
+  "Published to pub.dev — a Dart CLI that downloads Instagram Reels and Videos from a URL, installable "
+      "globally with `dart pub global activate insta_video_downloader`.",
+  "Built a fallback resolution chain so a failed primary endpoint retries through alternates, materially "
+      "improving download success rates.",
+  "Runs anywhere the Dart SDK does — Android, iOS, Linux, macOS, and Windows. MIT licensed, 140/160 pub points.",
+];

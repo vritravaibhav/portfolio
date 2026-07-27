@@ -498,6 +498,60 @@ class _AnimatedBackgroundState extends State<_AnimatedBackground>
   }
 }
 
+// ─── Skills, grouped as on the résumé ─────────────────────────────────────────
+
+const Map<String, List<String>> _skillGroups = {
+  'BACKEND': [
+    'Java',
+    'Spring Boot',
+    'Spring Security (JWT)',
+    'Spring Data JPA',
+    'Hibernate',
+    'Spring MVC',
+    'RESTful APIs',
+    'Microservices',
+    'RabbitMQ',
+    'Flyway',
+    'Maven',
+  ],
+  'DATABASES & CACHING': [
+    'MySQL',
+    'MongoDB',
+    'Redis',
+    'Query Optimization',
+    'Indexing',
+    'Firebase',
+  ],
+  'TESTING & DEVOPS': [
+    'JUnit 5',
+    'Mockito',
+    'Swagger/OpenAPI',
+    'Docker',
+    'Postman',
+    'Git',
+    'GitHub Actions',
+  ],
+  'MOBILE & FRONTEND': [
+    'Flutter',
+    'Dart',
+    'BLoC',
+    'Riverpod',
+    'Provider',
+    'Android Native (NDK/JNI)',
+    'C++',
+    'WebRTC',
+  ],
+  'OTHER': [
+    'Stripe SDK',
+    'FCM',
+    'Crashlytics',
+    'A/B Testing',
+    'Remote Config',
+    'AI Agents (LLM APIs)',
+    'Figma',
+  ],
+};
+
 // ─── Portfolio screen ─────────────────────────────────────────────────────────
 
 class PortfolioScreen extends StatefulWidget {
@@ -642,7 +696,7 @@ class _PortfolioScreenState extends State<PortfolioScreen>
                   ),
                   child: const CircleAvatar(
                     radius: 62,
-                    backgroundImage: AssetImage('assets/profilepic.jpg'),
+                    backgroundImage: AssetImage('assets/profilepic.jpeg'),
                     backgroundColor: Color(0xFF111827),
                   ),
                 ),
@@ -699,7 +753,7 @@ class _PortfolioScreenState extends State<PortfolioScreen>
               _SocialBtn(
                 icon: FontAwesomeIcons.linkedin,
                 label: 'LinkedIn',
-                url: 'https://linkedin.com/in/divyanshu-vaibhav',
+                url: 'https://www.linkedin.com/in/divyanshuvaibhav/',
               ),
             ],
           ),
@@ -731,37 +785,32 @@ class _PortfolioScreenState extends State<PortfolioScreen>
           Text('2020 – 2024', style: Theme.of(context).textTheme.labelSmall),
           const SizedBox(height: 36),
           _sideLabel(context, '// skills'),
-          const SizedBox(height: 14),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              'Flutter',
-              'Dart',
-              'C++ / NDK',
-              'JNI / JVM',
-              'WebRTC',
-              'BLoC',
-              'Riverpod',
-              'Provider',
-              'Firebase',
-              'Android Native',
-              'ML Kit',
-              'Dialogflow CX',
-              'Node.js',
-              'MongoDB',
-              'Stripe SDK',
-              'Git',
-              'Figma',
-              'Postman',
-            ].map((s) => _SkillChip(label: s)).toList(),
+          const SizedBox(height: 16),
+          ..._skillGroups.entries.expand(
+            (group) => [
+              Text(
+                group.key,
+                style: Theme.of(context).textTheme.labelSmall!.copyWith(
+                      color: const Color(0xFFFFB703),
+                      fontSize: 10,
+                      letterSpacing: 1.4,
+                    ),
+              ),
+              const SizedBox(height: 8),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children:
+                    group.value.map((s) => _SkillChip(label: s)).toList(),
+              ),
+              const SizedBox(height: 18),
+            ],
           ),
-          const SizedBox(height: 36),
-          _sideLabel(context, '// achievements'),
+          const SizedBox(height: 18),
+          _sideLabel(context, '// problem solving'),
           const SizedBox(height: 14),
           ...[
-            '30+ production apps — Flutter, Firebase, WebRTC, Android Native',
-            '400+ competitive programming problems on Codeforces, CodeChef, LeetCode, GFG',
+            'Solved 400+ DSA problems on LeetCode and Codeforces (Java / Dart)',
             'Ranked #5,466 worldwide — Codeforces Round 889 (Div. 2)',
           ].map(
             (a) => Padding(
@@ -796,7 +845,7 @@ class _PortfolioScreenState extends State<PortfolioScreen>
       ),
       const SizedBox(height: 14),
       const ExperienceCard(
-        title: 'Flutter Developer',
+        title: 'Software Developer',
         companyName: 'Electromotion E-vidyut',
         description: electromotionExperience,
         duration: 'Sep 2024 – Jan 2026',
@@ -811,7 +860,7 @@ class _PortfolioScreenState extends State<PortfolioScreen>
       const SizedBox(height: 14),
       const ExperienceCard(
         title: 'Flutter Developer Intern',
-        companyName: 'Outshade',
+        companyName: 'Outshade Digital Media',
         description: outshadeExperience,
         duration: 'Jun 2023 – Aug 2023',
       ),
@@ -819,26 +868,31 @@ class _PortfolioScreenState extends State<PortfolioScreen>
       _sectionTitle(context, 'Projects'),
       const SizedBox(height: 20),
       const CardItem(
-        time: 'Flutter · Wasm · WebRTC · JS Interop · STUN/TURN',
-        heading: 'High-Speed P2P File Transfer Chrome Extension',
-        title: 'Serverless browser-native transfers up to 1 TB',
-        descriptiom: p2pFileTransferDec,
+        time: 'Spring Boot · Spring Data JPA · MySQL · Flutter · LLM APIs',
+        heading: 'SalesPilot — AI-Powered Sales Outreach Suite',
+        title:
+            'Multi-agent AI email authoring, contact capture, and campaign pipelines',
+        descriptiom: salesPilotDec,
       ),
       const SizedBox(height: 14),
       const CardItem(
-        time: 'Flutter · Firebase Realtime Database · WebRTC',
-        heading: 'MultiUser Video Call',
-        title: 'Mesh-topology multi-peer video conferencing',
-        descriptiom: webrtcdec,
+        time: 'Spring Boot · WebSocket/STOMP · WebRTC · Flutter Wasm · LLM APIs',
+        heading: 'DroopIt — P2P Collaboration Platform',
+        title:
+            'Team chat, 1 TB serverless P2P file transfer, and an AI project manager',
+        descriptiom: droopItDec,
         githubUrl: 'https://github.com/vritravaibhav',
       ),
-      const SizedBox(height: 14),
+      const SizedBox(height: 40),
+      _sectionTitle(context, 'Open Source'),
+      const SizedBox(height: 20),
       const CardItem(
-        time: 'Flutter · Firebase Auth · Firestore · Storage',
-        heading: 'Full-Stack Instagram Clone',
-        title: 'Feature-complete social platform',
-        descriptiom: instaCloneDec,
-        githubUrl: 'https://github.com/vritravaibhav',
+        time: 'Dart · CLI · pub.dev · v1.0.0 · MIT',
+        heading: 'insta_video_downloader',
+        title: 'Published Dart package — Instagram Reel/Video downloader CLI',
+        descriptiom: instaVideoDownloaderDec,
+        pubDevUrl: 'https://pub.dev/packages/insta_video_downloader',
+        githubUrl: 'https://github.com/vritravaibhav/insta_reel_cli',
       ),
       const SizedBox(height: 40),
       _sectionTitle(context, 'Contact'),
