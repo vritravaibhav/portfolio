@@ -1,498 +1,52 @@
-import 'dart:math' as math;
-
 import 'package:flutter/material.dart';
-import 'package:flutter/scheduler.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:portfolio/constatnts/strings.dart';
 import 'package:portfolio/widgets/widgets.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-// ─── Star types ───────────────────────────────────────────────────────────────
+// ─── Static backdrop ──────────────────────────────────────────────────────────
 
-enum _StarKind { good, evil }
-
-// ─── Star particle ────────────────────────────────────────────────────────────
-
-class _Star {
-  double x, y, z, speed, brightness;
-  Color color;
-  double cooldown;
-  _StarKind kind;
-  _Star({
-    required this.x,
-    required this.y,
-    required this.z,
-    required this.speed,
-    required this.brightness,
-    required this.color,
-    required this.kind,
-    this.cooldown = 0,
-  });
-}
-
-// ─── Burst animation ──────────────────────────────────────────────────────────
-
-class _BurstSpark {
-  final double angle;
-  final double speed;
-  final double size;
-  _BurstSpark({required this.angle, required this.speed, required this.size});
-}
-
-class _Burst {
-  final Offset center;
-  final Color color;
-  final List<_BurstSpark> sparks;
-  final _StarKind kind;
-  double life;
-
-  _Burst({
-    required this.center,
-    required this.color,
-    required this.sparks,
-    required this.kind,
-  }) : life = 1.0;
-}
-
-// ─── CustomPainter: perspective grid + starfield ──────────────────────────────
-
-class _ScenePainter extends CustomPainter {
-  final List<_Star> stars;
-  final double gridTime;
-  final Offset mouseNorm;
-  final Offset mousePos;
-  final List<_Burst> bursts;
-  final double health; // 0.0 – 1.0
-  final Size screenSize;
-
-  _ScenePainter({
-    required this.stars,
-    required this.gridTime,
-    required this.mouseNorm,
-    required this.mousePos,
-    required this.bursts,
-    required this.health,
-    required this.screenSize,
-  });
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    _drawGrid(canvas, size);
-    _drawStars(canvas, size);
-    _drawBursts(canvas);
-    _drawHealthBar(canvas);
-  }
-
-  void _drawGrid(Canvas canvas, Size size) {
-    final vpX = size.width / 2 + mouseNorm.dx * 18;
-    final vpY = size.height * 0.52 + mouseNorm.dy * 10;
-    final bottom = size.height + 120.0;
-
-    // Vertical converging lines
-    const numV = 20;
-    for (int i = 0; i <= numV; i++) {
-      final t = i / numV;
-      final bx = size.width * t;
-      final edgeFade = 1.0 - ((t - 0.5).abs() * 1.9).clamp(0.0, 1.0);
-      if (edgeFade <= 0) continue;
-      canvas.drawLine(
-        Offset(vpX + (bx - vpX) * 0.015, vpY),
-        Offset(bx, bottom),
-        Paint()
-          ..color = const Color(0xFF0FF0FC).withValues(alpha: 0.16 * edgeFade)
-          ..strokeWidth = 0.7,
-      );
-    }
-
-    // Horizontal animated lines (scroll toward camera)
-    const numH = 14;
-    for (int i = 0; i < numH; i++) {
-      final phase = (i / numH + gridTime) % 1.0;
-      final perspT = math.pow(phase, 1.7).toDouble();
-      final y = vpY + (bottom - vpY) * perspT;
-      if (y < vpY) continue;
-      final half = (vpX * perspT * 1.5).clamp(0.0, size.width / 2);
-      final alpha = (perspT * 0.3).clamp(0.0, 0.3);
-      canvas.drawLine(
-        Offset(vpX - half, y),
-        Offset(vpX + half, y),
-        Paint()
-          ..color = const Color(0xFF0FF0FC).withValues(alpha: alpha)
-          ..strokeWidth = 0.7,
-      );
-    }
-
-    // Horizon glow
-    final horizonRect = Rect.fromCenter(
-      center: Offset(vpX, vpY),
-      width: size.width * 0.75,
-      height: 70,
-    );
-    canvas.drawRect(
-      horizonRect,
-      Paint()
-        ..shader = RadialGradient(
-          colors: [
-            const Color(0xFF0FF0FC).withValues(alpha: 0.20),
-            const Color(0xFF0FF0FC).withValues(alpha: 0.0),
-          ],
-          radius: 0.5,
-        ).createShader(horizonRect),
-    );
-
-    // Ambient vertical glow beam
-    final beamRect =
-        Rect.fromLTWH(vpX - 120, vpY - 40, 240, size.height - vpY + 40);
-    canvas.drawRect(
-      beamRect,
-      Paint()
-        ..shader = LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [
-            const Color(0xFF0FF0FC).withValues(alpha: 0.04),
-            const Color(0xFF0FF0FC).withValues(alpha: 0.0),
-          ],
-        ).createShader(beamRect),
-    );
-  }
-
-  void _drawStars(Canvas canvas, Size size) {
-    final cx = size.width / 2;
-    final cy = size.height * 0.38;
-    const depth = 330.0;
-
-    for (final s in stars) {
-      if (s.cooldown > 0) continue;
-
-      final px = (s.x + mouseNorm.dx * 14 * (depth / s.z)) * depth / s.z + cx;
-      final py = (s.y + mouseNorm.dy * 10 * (depth / s.z)) * depth / s.z + cy;
-
-      if (px < -20 || px > size.width + 20 || py < -20 || py > size.height + 20)
-        continue;
-
-      final radius = (2.8 * depth / s.z).clamp(0.3, 5.0);
-      final alpha = (s.brightness * (1 - s.z / 640)).clamp(0.0, 1.0);
-      final pos = Offset(px, py);
-
-      if (s.kind == _StarKind.evil) {
-        // Evil: red/orange/purple with warning ring
-        canvas.drawCircle(pos, radius * 2.2,
-            Paint()..color = s.color.withValues(alpha: alpha * 0.10));
-        canvas.drawCircle(
-          pos,
-          radius * 2.2,
-          Paint()
-            ..color = s.color.withValues(alpha: alpha * 0.45)
-            ..style = PaintingStyle.stroke
-            ..strokeWidth = 0.7,
-        );
-        canvas.drawCircle(pos, radius * 0.6,
-            Paint()..color = s.color.withValues(alpha: alpha * 0.95));
-        // 4-point cross to look spiky
-        final r = radius * 1.3;
-        final linePaint = Paint()
-          ..color = s.color.withValues(alpha: alpha * 0.5)
-          ..strokeWidth = 0.5;
-        canvas.drawLine(Offset(px, py - r), Offset(px, py + r), linePaint);
-        canvas.drawLine(Offset(px - r, py), Offset(px + r, py), linePaint);
-      } else {
-        // Good: soft cyan/green glowing dot
-        canvas.drawCircle(pos, radius * 2.2,
-            Paint()..color = s.color.withValues(alpha: alpha * 0.12));
-        canvas.drawCircle(pos, radius * 0.45,
-            Paint()..color = Colors.white.withValues(alpha: alpha * 0.95));
-      }
-    }
-  }
-
-  void _drawHealthBar(Canvas canvas) {
-    if (mousePos == Offset.zero || screenSize == Size.zero) return;
-
-    const barW = 84.0;
-    const barH = 9.0;
-    final bx = mousePos.dx - barW / 2;
-    final by = mousePos.dy - 34;
-
-    // Background pill
-    final bgRect = RRect.fromRectAndRadius(
-        Rect.fromLTWH(bx - 2, by - 2, barW + 4, barH + 4),
-        const Radius.circular(6));
-    canvas.drawRRect(bgRect,
-        Paint()..color = const Color(0xFF000000).withValues(alpha: 0.60));
-
-    // Fill
-    final fillColor = _hpColor(health);
-    if (health > 0) {
-      canvas.drawRRect(
-        RRect.fromRectAndRadius(Rect.fromLTWH(bx, by, barW * health, barH),
-            const Radius.circular(4)),
-        Paint()..color = fillColor,
-      );
-    }
-
-    // Border
-    canvas.drawRRect(
-      RRect.fromRectAndRadius(
-          Rect.fromLTWH(bx, by, barW, barH), const Radius.circular(4)),
-      Paint()
-        ..color = Colors.white.withValues(alpha: 0.25)
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 0.8,
-    );
-
-    // Cursor ring (colour-coded)
-    canvas.drawCircle(
-      mousePos,
-      7,
-      Paint()
-        ..color = fillColor.withValues(alpha: 0.80)
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 1.6,
-    );
-  }
-
-  Color _hpColor(double h) {
-    if (h > 0.55) {
-      return Color.lerp(
-          const Color(0xFFFFD700), const Color(0xFF00FF87), (h - 0.55) / 0.45)!;
-    } else if (h > 0.25) {
-      return Color.lerp(
-          const Color(0xFFFF6B35), const Color(0xFFFFD700), (h - 0.25) / 0.30)!;
-    }
-    return Color.lerp(
-        const Color(0xFFFF1744), const Color(0xFFFF6B35), h / 0.25)!;
-  }
-
-  void _drawBursts(Canvas canvas) {
-    for (final b in bursts) {
-      final t = 1.0 - b.life; // progress 0→1
-
-      // Outer expanding ring
-      canvas.drawCircle(
-        b.center,
-        58.0 * t,
-        Paint()
-          ..color = b.color.withValues(alpha: b.life * 0.65)
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = 1.8 * b.life,
-      );
-
-      // Inner ring (slightly delayed)
-      if (t > 0.12) {
-        final t2 = (t - 0.12) / 0.88;
-        canvas.drawCircle(
-          b.center,
-          28.0 * t2,
-          Paint()
-            ..color = Colors.white.withValues(alpha: b.life * 0.35)
-            ..style = PaintingStyle.stroke
-            ..strokeWidth = 1.0 * b.life,
-        );
-      }
-
-      // Center flash (first 20%)
-      if (t < 0.20) {
-        final f = 1.0 - (t / 0.20);
-        canvas.drawCircle(
-          b.center,
-          14.0 * f,
-          Paint()
-            ..color = Colors.white.withValues(alpha: f * 0.88)
-            ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 5),
-        );
-      }
-
-      // Spark streaks (no blur on tips — too expensive per-spark)
-      for (final s in b.sparks) {
-        final dist = s.speed * t;
-        final tip = Offset(
-          b.center.dx + math.cos(s.angle) * dist,
-          b.center.dy + math.sin(s.angle) * dist,
-        );
-        final tail = Offset(
-          b.center.dx + math.cos(s.angle) * (dist * 0.5),
-          b.center.dy + math.sin(s.angle) * (dist * 0.5),
-        );
-        canvas.drawLine(
-          tail,
-          tip,
-          Paint()
-            ..color = b.color.withValues(alpha: b.life * 0.80)
-            ..strokeWidth = s.size * b.life * 0.9
-            ..strokeCap = StrokeCap.round,
-        );
-        // Plain bright tip dot (no blur)
-        canvas.drawCircle(
-          tip,
-          s.size * b.life * 0.9,
-          Paint()..color = Colors.white.withValues(alpha: b.life * 0.88),
-        );
-      }
-    }
-  }
-
-  @override
-  bool shouldRepaint(_ScenePainter old) => true;
-}
-
-// ─── Animated background widget ───────────────────────────────────────────────
-
-class _AnimatedBackground extends StatefulWidget {
-  final ValueNotifier<Offset> mouseNotifier;
-  const _AnimatedBackground({required this.mouseNotifier});
-
-  @override
-  State<_AnimatedBackground> createState() => _AnimatedBackgroundState();
-}
-
-class _AnimatedBackgroundState extends State<_AnimatedBackground>
-    with SingleTickerProviderStateMixin {
-  late Ticker _ticker;
-  Duration _last = Duration.zero;
-  double _gridTime = 0;
-  double _health = 1.0;
-  final List<_Star> _stars = [];
-  final List<_Burst> _bursts = [];
-  final _rng = math.Random(77);
-
-  // Updated by pointer events; ticker reads them each frame — no extra setState
-  Offset _mouseNorm = Offset.zero;
-  Offset _mousePos = Offset.zero;
-  Size _size = Size.zero;
-
-  static const _goodColors = [
-    Color(0xFF0FF0FC), // cyan
-    Color(0xFF00BFFF), // blue
-    Color(0xFF00FF87), // green
-    Color(0xFF7DF9FF), // light cyan
-  ];
-  static const _evilColors = [
-    Color(0xFFFF3030), // red
-    Color(0xFFFF6B35), // orange-red
-    Color(0xFFBF00FF), // purple
-    Color(0xFFFF1744), // crimson
-  ];
-
-  static const double _burstRadius = 24.0;
-  static const double _burstCooldown = 1.2;
-  static const double _burstDuration = 0.72;
-
-  @override
-  void initState() {
-    super.initState();
-    for (int i = 0; i < 75; i++) {
-      _stars.add(_newStar(initial: true));
-    }
-    _ticker = createTicker(_onTick)..start();
-  }
-
-  _Star _newStar({bool initial = false}) {
-    final evil = _rng.nextDouble() < 0.32; // 32 % evil
-    final colors = evil ? _evilColors : _goodColors;
-    final cIdx = _rng.nextInt(colors.length);
-    return _Star(
-      x: (_rng.nextDouble() - 0.5) * 1500,
-      y: (_rng.nextDouble() - 0.5) * 850,
-      z: initial ? _rng.nextDouble() * 600 + 30 : 600 + _rng.nextDouble() * 40,
-      speed: 0.5 + _rng.nextDouble() * 1.5,
-      brightness: 0.35 + _rng.nextDouble() * 0.65,
-      color: colors[cIdx],
-      kind: evil ? _StarKind.evil : _StarKind.good,
-    );
-  }
-
-  _Burst _makeBurst(Offset center, Color color, _StarKind kind) {
-    const sparkCount = 8;
-    final sparks = List.generate(sparkCount, (i) {
-      final angle =
-          (i / sparkCount) * math.pi * 2 + _rng.nextDouble() * 0.35 - 0.175;
-      return _BurstSpark(
-        angle: angle,
-        speed: 44 + _rng.nextDouble() * 28,
-        size: 1.2 + _rng.nextDouble() * 1.3,
-      );
-    });
-    return _Burst(center: center, color: color, sparks: sparks, kind: kind);
-  }
-
-  Offset _project(_Star s) {
-    if (_size == Size.zero) return Offset.zero;
-    const depth = 330.0;
-    final cx = _size.width / 2;
-    final cy = _size.height * 0.38;
-    final px = (s.x + _mouseNorm.dx * 14 * (depth / s.z)) * depth / s.z + cx;
-    final py = (s.y + _mouseNorm.dy * 10 * (depth / s.z)) * depth / s.z + cy;
-    return Offset(px, py);
-  }
-
-  void _onTick(Duration elapsed) {
-    final pos = widget.mouseNotifier.value;
-    _mousePos = pos;
-    if (_size != Size.zero && pos != Offset.zero) {
-      _mouseNorm = Offset(
-        (pos.dx / _size.width - 0.5) * 2,
-        (pos.dy / _size.height - 0.5) * 2,
-      );
-    }
-    final dt = (elapsed - _last).inMicroseconds / 1e6;
-    _last = elapsed;
-    if (!mounted) return;
-    setState(() {
-      _gridTime = (_gridTime + dt * 0.21) % 1.0;
-
-      for (int i = 0; i < _stars.length; i++) {
-        _stars[i].z -= _stars[i].speed * dt * 58;
-        if (_stars[i].z < 6) _stars[i] = _newStar();
-        if (_stars[i].cooldown > 0) _stars[i].cooldown -= dt;
-      }
-
-      // Proximity burst check
-      if (_mousePos != Offset.zero) {
-        for (int i = 0; i < _stars.length; i++) {
-          if (_stars[i].cooldown > 0) continue;
-          final screen = _project(_stars[i]);
-          if ((screen - _mousePos).distance < _burstRadius) {
-            final s = _stars[i];
-            _bursts.add(_makeBurst(screen, s.color, s.kind));
-            _stars[i].cooldown = _burstCooldown;
-            if (s.kind == _StarKind.good) {
-              _health = (_health + 0.09).clamp(0.0, 1.0);
-            } else {
-              _health = (_health - 0.13).clamp(0.0, 1.0);
-            }
-          }
-        }
-      }
-
-      for (int i = _bursts.length - 1; i >= 0; i--) {
-        _bursts[i].life -= dt / _burstDuration;
-        if (_bursts[i].life <= 0) _bursts.removeAt(i);
-      }
-    });
-  }
-
-  @override
-  void dispose() {
-    _ticker.dispose();
-    super.dispose();
-  }
+/// Paint-once atmosphere: two stacked gradients, no ticker and no particles.
+/// Everything here is `const`, so it rasterises on first frame and is never
+/// invalidated again — a low-end device does zero per-frame work for it.
+class _Backdrop extends StatelessWidget {
+  const _Backdrop();
 
   @override
   Widget build(BuildContext context) {
-    _size = MediaQuery.of(context).size;
-    return RepaintBoundary(
-      child: CustomPaint(
-        painter: _ScenePainter(
-          stars: _stars,
-          gridTime: _gridTime,
-          mouseNorm: _mouseNorm,
-          mousePos: _mousePos,
-          bursts: _bursts,
-          health: _health,
-          screenSize: _size,
-        ),
-        child: const SizedBox.expand(),
+    return const RepaintBoundary(
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          // Base: deep navy, lighter toward the top.
+          DecoratedBox(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  Color(0xFF101A2E),
+                  Color(0xFF0A0E1A),
+                  Color(0xFF070A12),
+                ],
+                stops: [0.0, 0.5, 1.0],
+              ),
+            ),
+          ),
+          // Cyan bloom behind the header, fading out well before mid-page.
+          DecoratedBox(
+            decoration: BoxDecoration(
+              gradient: RadialGradient(
+                center: Alignment(-0.55, -0.85),
+                radius: 1.1,
+                colors: [
+                  Color(0x2A0FF0FC),
+                  Color(0x000FF0FC),
+                ],
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -565,11 +119,12 @@ class _PortfolioScreenState extends State<PortfolioScreen>
     with SingleTickerProviderStateMixin {
   late AnimationController _entranceCtrl;
   late Animation<double> _fadeIn;
-  final _mouseNotifier = ValueNotifier<Offset>(Offset.zero);
 
   @override
   void initState() {
     super.initState();
+    // Runs once on load, then the controller idles and the app stops
+    // producing frames entirely.
     _entranceCtrl = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 1100),
@@ -580,7 +135,6 @@ class _PortfolioScreenState extends State<PortfolioScreen>
   @override
   void dispose() {
     _entranceCtrl.dispose();
-    _mouseNotifier.dispose();
     super.dispose();
   }
 
@@ -588,29 +142,22 @@ class _PortfolioScreenState extends State<PortfolioScreen>
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFF0A0E1A),
-      body: Listener(
-        behavior: HitTestBehavior.translucent,
-        onPointerHover: (event) => _mouseNotifier.value = event.position,
-        onPointerMove: (event) => _mouseNotifier.value = event.position,
-        child: Stack(
-          children: [
-            Positioned.fill(
-              child: _AnimatedBackground(mouseNotifier: _mouseNotifier),
-            ),
-            FadeTransition(
-              opacity: _fadeIn,
-              child: SelectionArea(
-                child: LayoutBuilder(
-                  builder: (context, constraints) {
-                    return constraints.maxWidth > 800
-                        ? _buildWide(context)
-                        : _buildNarrow(context);
-                  },
-                ),
+      body: Stack(
+        children: [
+          const Positioned.fill(child: _Backdrop()),
+          FadeTransition(
+            opacity: _fadeIn,
+            child: SelectionArea(
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  return constraints.maxWidth > 800
+                      ? _buildWide(context)
+                      : _buildNarrow(context);
+                },
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -668,38 +215,28 @@ class _PortfolioScreenState extends State<PortfolioScreen>
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Center(
-            child: FloatingWidget(
-              amplitude: 7,
-              child: Tilt3DWrapper(
-                maxTilt: 0.2,
-                child: Container(
-                  padding: const EdgeInsets.all(3),
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    gradient: const LinearGradient(
-                      colors: [Color(0xFF0FF0FC), Color(0xFF005CFF)],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: const Color(0xFF0FF0FC).withValues(alpha: 0.40),
-                        blurRadius: 48,
-                        spreadRadius: 6,
-                      ),
-                      BoxShadow(
-                        color: const Color(0xFF005CFF).withValues(alpha: 0.22),
-                        blurRadius: 70,
-                        spreadRadius: 2,
-                      ),
-                    ],
-                  ),
-                  child: const CircleAvatar(
-                    radius: 62,
-                    backgroundImage: AssetImage('assets/profilepic.jpeg'),
-                    backgroundColor: Color(0xFF111827),
-                  ),
+            child: Container(
+              padding: const EdgeInsets.all(3),
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: const LinearGradient(
+                  colors: [Color(0xFF0FF0FC), Color(0xFF005CFF)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
                 ),
+                // One modest shadow instead of two wide blurs.
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFF0FF0FC).withValues(alpha: 0.28),
+                    blurRadius: 22,
+                    spreadRadius: 1,
+                  ),
+                ],
+              ),
+              child: const CircleAvatar(
+                radius: 62,
+                backgroundImage: AssetImage('assets/profilepic.jpeg'),
+                backgroundColor: Color(0xFF111827),
               ),
             ),
           ),
@@ -733,7 +270,7 @@ class _PortfolioScreenState extends State<PortfolioScreen>
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const _PulsingDot(),
+                const _StatusDot(),
                 const SizedBox(width: 7),
                 Text('@ Longfloat · Dubai',
                     style: Theme.of(context).textTheme.labelSmall),
@@ -760,16 +297,22 @@ class _PortfolioScreenState extends State<PortfolioScreen>
           const SizedBox(height: 36),
           _sideLabel(context, '// contact'),
           const SizedBox(height: 14),
-          _infoRow(context, Icons.phone_outlined, '+91 9576671336',
-              () => launchUrl(Uri(scheme: 'tel', path: '+919576671336'))),
+          ContactLine(
+            icon: Icons.phone_outlined,
+            text: '+91 9576671336',
+            label: 'Phone number',
+            copyText: '+919576671336',
+            onTap: () => launchUrl(Uri(scheme: 'tel', path: '+919576671336')),
+          ),
           const SizedBox(height: 10),
-          _infoRow(
-            context,
-            Icons.email_outlined,
-            'divaibhavyanshu@gmail.com',
-            () => launchUrl(
+          ContactLine(
+            icon: Icons.email_outlined,
+            text: contactEmail,
+            label: 'Email',
+            copyText: contactEmail,
+            onTap: () => launchUrl(
               Uri.parse(
-                  'https://mail.google.com/mail/?view=cm&fs=1&to=divaibhavyanshu@gmail.com'),
+                  'https://mail.google.com/mail/?view=cm&fs=1&to=$contactEmail'),
               mode: LaunchMode.externalApplication,
             ),
           ),
@@ -881,10 +424,10 @@ class _PortfolioScreenState extends State<PortfolioScreen>
         title:
             'Team chat, 1 TB serverless P2P file transfer, and an AI project manager',
         descriptiom: droopItDec,
-        githubUrl: 'https://github.com/vritravaibhav',
+        githubUrl: 'https://github.com/vritravaibhav/droopit',
       ),
       const SizedBox(height: 40),
-      _sectionTitle(context, 'Open Source'),
+      _sectionTitle(context, 'Contribution'),
       const SizedBox(height: 20),
       const CardItem(
         time: 'Dart · CLI · pub.dev · v1.0.0 · MIT',
@@ -936,85 +479,29 @@ class _PortfolioScreenState extends State<PortfolioScreen>
     );
   }
 
-  Widget _infoRow(
-    BuildContext context,
-    IconData icon,
-    String text,
-    VoidCallback onTap,
-  ) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Row(
-        children: [
-          Icon(icon, size: 15, color: const Color(0xFF0FF0FC)),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              text,
-              style: Theme.of(context)
-                  .textTheme
-                  .bodyMedium!
-                  .copyWith(color: const Color(0xFF0FF0FC)),
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 }
 
 // ─── Standalone private widgets ───────────────────────────────────────────────
 
-class _PulsingDot extends StatefulWidget {
-  const _PulsingDot();
-
-  @override
-  State<_PulsingDot> createState() => _PulsingDotState();
-}
-
-class _PulsingDotState extends State<_PulsingDot>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _ctrl;
-  late Animation<double> _scale;
-
-  @override
-  void initState() {
-    super.initState();
-    _ctrl = AnimationController(
-        vsync: this, duration: const Duration(milliseconds: 900))
-      ..repeat(reverse: true);
-    _scale = Tween(begin: 0.65, end: 1.35)
-        .animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeInOut));
-  }
-
-  @override
-  void dispose() {
-    _ctrl.dispose();
-    super.dispose();
-  }
+/// Static "available" indicator. Previously pulsed on a repeating controller,
+/// which kept the whole app in a 60fps frame loop for a 7px dot.
+class _StatusDot extends StatelessWidget {
+  const _StatusDot();
 
   @override
   Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: _scale,
-      builder: (_, __) => Transform.scale(
-        scale: _scale.value,
-        child: Container(
-          width: 7,
-          height: 7,
-          decoration: BoxDecoration(
-            color: const Color(0xFF4ADE80),
-            shape: BoxShape.circle,
-            boxShadow: [
-              BoxShadow(
-                color: const Color(0xFF4ADE80).withValues(alpha: 0.65),
-                blurRadius: 7,
-                spreadRadius: 1,
-              ),
-            ],
+    return Container(
+      width: 7,
+      height: 7,
+      decoration: BoxDecoration(
+        color: const Color(0xFF4ADE80),
+        shape: BoxShape.circle,
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF4ADE80).withValues(alpha: 0.55),
+            blurRadius: 6,
           ),
-        ),
+        ],
       ),
     );
   }
@@ -1027,18 +514,18 @@ class _GlowText extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Stack(
-      children: [
-        Text(
-          text,
-          style: style.copyWith(
-            foreground: Paint()
-              ..color = const Color(0xFF0FF0FC).withValues(alpha: 0.12)
-              ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 10),
+    // A single text shadow rather than a blurred copy stacked behind a second
+    // Text: same neon read, one layout pass and no saveLayer.
+    return Text(
+      text,
+      style: style.copyWith(
+        shadows: [
+          Shadow(
+            color: const Color(0xFF0FF0FC).withValues(alpha: 0.35),
+            blurRadius: 12,
           ),
-        ),
-        Text(text, style: style),
-      ],
+        ],
+      ),
     );
   }
 }

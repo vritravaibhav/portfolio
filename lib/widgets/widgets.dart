@@ -1,131 +1,191 @@
+import 'dart:async';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 /// Where "Get in touch" submissions are delivered.
 const String contactEmail = 'divaibhavyanshu@gmail.com';
 
-// ─── 3D tilt on mouse hover ───────────────────────────────────────────────────
+// ─── Contact line ─────────────────────────────────────────────────────────────
 
-class Tilt3DWrapper extends StatefulWidget {
-  final Widget child;
-  final double maxTilt;
-  final double perspective;
+/// A contact detail with an explicit copy button.
+///
+/// Drag-to-select works (the tree is wrapped in a SelectionArea), but on a
+/// canvas-rendered web app that is fiddly and easy to miss — a visitor who
+/// wants the email should not have to discover it. The button copies
+/// unconditionally.
+class ContactLine extends StatefulWidget {
+  final IconData icon;
+  final String text;
 
-  const Tilt3DWrapper({
+  /// Copied verbatim. When null, no copy button is shown.
+  final String? copyText;
+
+  /// Fired when the label itself is tapped (mail client, dialer, …).
+  final VoidCallback? onTap;
+
+  /// What the confirmation calls this, e.g. 'Email'.
+  final String label;
+
+  const ContactLine({
     super.key,
-    required this.child,
-    this.maxTilt = 0.12,
-    this.perspective = 0.0008,
+    required this.icon,
+    required this.text,
+    required this.label,
+    this.copyText,
+    this.onTap,
   });
 
   @override
-  State<Tilt3DWrapper> createState() => _Tilt3DWrapperState();
+  State<ContactLine> createState() => _ContactLineState();
 }
 
-class _Tilt3DWrapperState extends State<Tilt3DWrapper>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _ctrl;
-  double _rotX = 0, _rotY = 0;
-  double _targetX = 0, _targetY = 0;
-
-  @override
-  void initState() {
-    super.initState();
-    _ctrl = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 1),
-    )
-      ..addListener(() {
-        setState(() {
-          _rotX += (_targetX - _rotX) * 0.1;
-          _rotY += (_targetY - _rotY) * 0.1;
-        });
-      })
-      ..repeat();
-  }
+class _ContactLineState extends State<ContactLine> {
+  bool _copied = false;
+  bool _hovered = false;
+  Timer? _resetTimer;
 
   @override
   void dispose() {
-    _ctrl.dispose();
+    _resetTimer?.cancel();
     super.dispose();
+  }
+
+  Future<void> _copy() async {
+    await Clipboard.setData(ClipboardData(text: widget.copyText!));
+    if (!mounted) return;
+
+    setState(() => _copied = true);
+    _resetTimer?.cancel();
+    _resetTimer = Timer(const Duration(milliseconds: 1800), () {
+      if (mounted) setState(() => _copied = false);
+    });
+
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          duration: const Duration(seconds: 2),
+          backgroundColor: const Color(0xFF0F1F33),
+          behavior: SnackBarBehavior.floating,
+          // No fixed width: labels vary in length ('Phone number copied') and
+          // the system text scale can grow them further, either of which
+          // overflows a hard-coded box.
+          margin: const EdgeInsets.all(16),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(6),
+            side: BorderSide(
+              color: const Color(0xFF0FF0FC).withValues(alpha: 0.35),
+            ),
+          ),
+          content: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.check, size: 15, color: Color(0xFF4ADE80)),
+              const SizedBox(width: 8),
+              Flexible(
+                child: Text(
+                  '${widget.label} copied',
+                  style: const TextStyle(
+                    color: Color(0xFFCBD5E1),
+                    fontSize: 12,
+                    letterSpacing: 0.4,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
   }
 
   @override
   Widget build(BuildContext context) {
+    final label = Text(
+      widget.text,
+      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+            color: widget.onTap != null ? const Color(0xFF0FF0FC) : null,
+          ),
+    );
+
     return MouseRegion(
-      onHover: (event) {
-        final box = context.findRenderObject() as RenderBox?;
-        if (box == null) return;
-        final local = box.globalToLocal(event.position);
-        final nx = (local.dx / box.size.width - 0.5) * 2;
-        final ny = (local.dy / box.size.height - 0.5) * 2;
-        _targetY = nx * widget.maxTilt;
-        _targetX = -ny * widget.maxTilt;
-      },
-      onExit: (_) {
-        _targetX = 0;
-        _targetY = 0;
-      },
-      child: Transform(
-        alignment: Alignment.center,
-        transform: Matrix4.identity()
-          ..setEntry(3, 2, widget.perspective)
-          ..rotateX(_rotX)
-          ..rotateY(_rotY),
-        child: widget.child,
+      onEnter: (_) => setState(() => _hovered = true),
+      onExit: (_) => setState(() => _hovered = false),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(top: 2),
+            child: Icon(widget.icon, size: 15, color: const Color(0xFF0FF0FC)),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: widget.onTap == null
+                ? label
+                : GestureDetector(onTap: widget.onTap, child: label),
+          ),
+          if (widget.copyText != null) ...[
+            const SizedBox(width: 6),
+            _CopyButton(
+              copied: _copied,
+              // Always visible on touch, where there is no hover to reveal it.
+              prominent: _hovered || _copied,
+              onPressed: _copy,
+              semanticLabel: 'Copy ${widget.label.toLowerCase()}',
+            ),
+          ],
+        ],
       ),
     );
   }
 }
 
-// ─── Floating up/down animation ───────────────────────────────────────────────
+class _CopyButton extends StatelessWidget {
+  final bool copied;
+  final bool prominent;
+  final VoidCallback onPressed;
+  final String semanticLabel;
 
-class FloatingWidget extends StatefulWidget {
-  final Widget child;
-  final double amplitude;
-  final Duration period;
-
-  const FloatingWidget({
-    super.key,
-    required this.child,
-    this.amplitude = 8.0,
-    this.period = const Duration(seconds: 3),
+  const _CopyButton({
+    required this.copied,
+    required this.prominent,
+    required this.onPressed,
+    required this.semanticLabel,
   });
 
   @override
-  State<FloatingWidget> createState() => _FloatingWidgetState();
-}
-
-class _FloatingWidgetState extends State<FloatingWidget>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _ctrl;
-  late Animation<double> _anim;
-
-  @override
-  void initState() {
-    super.initState();
-    _ctrl =
-        AnimationController(vsync: this, duration: widget.period)
-          ..repeat(reverse: true);
-    _anim = Tween(begin: -widget.amplitude, end: widget.amplitude).animate(
-      CurvedAnimation(parent: _ctrl, curve: Curves.easeInOut),
-    );
-  }
-
-  @override
-  void dispose() {
-    _ctrl.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: _anim,
-      builder: (_, child) =>
-          Transform.translate(offset: Offset(0, _anim.value), child: child),
-      child: widget.child,
+    final color = copied ? const Color(0xFF4ADE80) : const Color(0xFF0FF0FC);
+    return Tooltip(
+      message: copied ? 'Copied' : semanticLabel,
+      child: Semantics(
+        button: true,
+        label: semanticLabel,
+        child: GestureDetector(
+          onTap: onPressed,
+          child: MouseRegion(
+            cursor: SystemMouseCursors.click,
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 160),
+              padding: const EdgeInsets.all(4),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(4),
+                color: color.withValues(alpha: prominent ? 0.14 : 0.06),
+                border: Border.all(
+                  color: color.withValues(alpha: prominent ? 0.55 : 0.22),
+                ),
+              ),
+              child: Icon(
+                copied ? Icons.check : Icons.copy_rounded,
+                size: 12,
+                color: color,
+              ),
+            ),
+          ),
+        ),
+      ),
     );
   }
 }
@@ -240,15 +300,13 @@ class CardItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Tilt3DWrapper(
-      child: _CardContent(
-        time: time,
-        heading: heading,
-        title: title,
-        descriptiom: descriptiom,
-        githubUrl: githubUrl,
-        pubDevUrl: pubDevUrl,
-      ),
+    return _CardContent(
+      time: time,
+      heading: heading,
+      title: title,
+      descriptiom: descriptiom,
+      githubUrl: githubUrl,
+      pubDevUrl: pubDevUrl,
     );
   }
 }
@@ -385,131 +443,129 @@ class _ExperienceCardState extends State<ExperienceCard> {
 
   @override
   Widget build(BuildContext context) {
-    return Tilt3DWrapper(
-      child: MouseRegion(
-        onEnter: (_) => setState(() => _hovered = true),
-        onExit: (_) => setState(() => _hovered = false),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          decoration: BoxDecoration(
-            color: _hovered ? const Color(0xFF111E38) : const Color(0xFF0F1629),
-            borderRadius: BorderRadius.circular(10),
-            border: Border.all(
-              color: _hovered
-                  ? const Color(0xFF0FF0FC).withValues(alpha: 0.35)
-                  : const Color(0xFF0FF0FC).withValues(alpha: 0.12),
-            ),
-            boxShadow: _hovered
-                ? [
-                    BoxShadow(
-                      color: const Color(0xFF0FF0FC).withValues(alpha: 0.12),
-                      blurRadius: 24,
-                      spreadRadius: 2,
-                    ),
-                  ]
-                : null,
+    return MouseRegion(
+      onEnter: (_) => setState(() => _hovered = true),
+      onExit: (_) => setState(() => _hovered = false),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        decoration: BoxDecoration(
+          color: _hovered ? const Color(0xFF111E38) : const Color(0xFF0F1629),
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(
+            color: _hovered
+                ? const Color(0xFF0FF0FC).withValues(alpha: 0.35)
+                : const Color(0xFF0FF0FC).withValues(alpha: 0.12),
           ),
-          child: IntrinsicHeight(
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Container(
-                  width: 3,
-                  decoration: BoxDecoration(
-                    color: widget.isActive
-                        ? const Color(0xFF0FF0FC)
-                        : const Color(0xFF1E3A5F),
-                    borderRadius: const BorderRadius.only(
-                      topLeft: Radius.circular(10),
-                      bottomLeft: Radius.circular(10),
-                    ),
+          boxShadow: _hovered
+              ? [
+                  BoxShadow(
+                    color: const Color(0xFF0FF0FC).withValues(alpha: 0.12),
+                    blurRadius: 24,
+                    spreadRadius: 2,
+                  ),
+                ]
+              : null,
+        ),
+        child: IntrinsicHeight(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Container(
+                width: 3,
+                decoration: BoxDecoration(
+                  color: widget.isActive
+                      ? const Color(0xFF0FF0FC)
+                      : const Color(0xFF1E3A5F),
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(10),
+                    bottomLeft: Radius.circular(10),
                   ),
                 ),
-                Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.all(20),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Row(
-                                    children: [
-                                      Flexible(
-                                        child: Text(
-                                          widget.title,
-                                          style: Theme.of(context)
-                                              .textTheme
-                                              .headlineMedium,
+              ),
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    Flexible(
+                                      child: Text(
+                                        widget.title,
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .headlineMedium,
+                                      ),
+                                    ),
+                                    if (widget.isActive) ...[
+                                      const SizedBox(width: 8),
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(
+                                            horizontal: 6, vertical: 2),
+                                        decoration: BoxDecoration(
+                                          color: const Color(0xFF4ADE80)
+                                              .withValues(alpha: 0.12),
+                                          borderRadius:
+                                              BorderRadius.circular(3),
+                                          border: Border.all(
+                                            color: const Color(0xFF4ADE80)
+                                                .withValues(alpha: 0.35),
+                                          ),
+                                        ),
+                                        child: const Text(
+                                          'active',
+                                          style: TextStyle(
+                                            color: Color(0xFF4ADE80),
+                                            fontSize: 9,
+                                            letterSpacing: 1.2,
+                                          ),
                                         ),
                                       ),
-                                      if (widget.isActive) ...[
-                                        const SizedBox(width: 8),
-                                        Container(
-                                          padding: const EdgeInsets.symmetric(
-                                              horizontal: 6, vertical: 2),
-                                          decoration: BoxDecoration(
-                                            color: const Color(0xFF4ADE80)
-                                                .withValues(alpha: 0.12),
-                                            borderRadius:
-                                                BorderRadius.circular(3),
-                                            border: Border.all(
-                                              color: const Color(0xFF4ADE80)
-                                                  .withValues(alpha: 0.35),
-                                            ),
-                                          ),
-                                          child: const Text(
-                                            'active',
-                                            style: TextStyle(
-                                              color: Color(0xFF4ADE80),
-                                              fontSize: 9,
-                                              letterSpacing: 1.2,
-                                            ),
-                                          ),
-                                        ),
-                                      ],
                                     ],
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    widget.companyName,
-                                    style: Theme.of(context)
-                                        .textTheme
-                                        .bodyLarge
-                                        ?.copyWith(
-                                          color: const Color(0xFFFFB703),
-                                          fontSize: 13,
-                                        ),
-                                  ),
-                                ],
-                              ),
+                                  ],
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  widget.companyName,
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .bodyLarge
+                                      ?.copyWith(
+                                        color: const Color(0xFFFFB703),
+                                        fontSize: 13,
+                                      ),
+                                ),
+                              ],
                             ),
-                            const SizedBox(width: 8),
-                            Text(
-                              widget.duration,
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .bodyMedium
-                                  ?.copyWith(
-                                    color: const Color(0xFF64748B),
-                                    fontSize: 11,
-                                  ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 14),
-                        BulletList(items: widget.description),
-                      ],
-                    ),
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            widget.duration,
+                            style: Theme.of(context)
+                                .textTheme
+                                .bodyMedium
+                                ?.copyWith(
+                                  color: const Color(0xFF64748B),
+                                  fontSize: 11,
+                                ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 14),
+                      BulletList(items: widget.description),
+                    ],
                   ),
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),
@@ -704,46 +760,50 @@ class ContactUsContainer extends StatelessWidget {
           Text('Divyanshu Vaibhav',
               style: Theme.of(context).textTheme.displaySmall),
           const SizedBox(height: 20),
-          _contactRow(
-            context,
-            Icons.phone_outlined,
-            '+91 9576671336',
-            () => launchUrl(Uri(scheme: 'tel', path: '+919576671336')),
+          ContactLine(
+            icon: Icons.phone_outlined,
+            text: '+91 9576671336',
+            label: 'Phone number',
+            copyText: '+919576671336',
+            onTap: () => launchUrl(Uri(scheme: 'tel', path: '+919576671336')),
           ),
           const SizedBox(height: 12),
-          _contactRow(
-            context,
-            Icons.email_outlined,
-            'divaibhavyanshu@gmail.com',
-            () => launchUrl(
+          ContactLine(
+            icon: Icons.email_outlined,
+            text: contactEmail,
+            label: 'Email',
+            copyText: contactEmail,
+            onTap: () => launchUrl(
               Uri.parse(
-                  'https://mail.google.com/mail/?view=cm&fs=1&to=divaibhavyanshu@gmail.com'),
+                  'https://mail.google.com/mail/?view=cm&fs=1&to=$contactEmail'),
               mode: LaunchMode.externalApplication,
             ),
           ),
           const SizedBox(height: 12),
-          _contactRow(
-            context,
-            Icons.school_outlined,
-            'B.E. Electronics & Communication\nPanjab University · 2020–2024',
-            null,
+          const ContactLine(
+            icon: Icons.school_outlined,
+            text: 'B.E. Electronics & Communication\n'
+                'Panjab University · 2020–2024',
+            label: 'Education',
           ),
           const SizedBox(height: 12),
-          _contactRow(
-            context,
-            Icons.code,
-            'github.com/vritravaibhav',
-            () => launchUrl(
+          ContactLine(
+            icon: Icons.code,
+            text: 'github.com/vritravaibhav',
+            label: 'GitHub URL',
+            copyText: 'https://github.com/vritravaibhav',
+            onTap: () => launchUrl(
               Uri.parse('https://github.com/vritravaibhav'),
               mode: LaunchMode.externalApplication,
             ),
           ),
           const SizedBox(height: 12),
-          _contactRow(
-            context,
-            Icons.link,
-            'linkedin.com/in/divyanshuvaibhav',
-            () => launchUrl(
+          ContactLine(
+            icon: Icons.link,
+            text: 'linkedin.com/in/divyanshuvaibhav',
+            label: 'LinkedIn URL',
+            copyText: 'https://www.linkedin.com/in/divyanshuvaibhav/',
+            onTap: () => launchUrl(
               Uri.parse('https://www.linkedin.com/in/divyanshuvaibhav/'),
               mode: LaunchMode.externalApplication,
             ),
@@ -751,30 +811,5 @@ class ContactUsContainer extends StatelessWidget {
         ],
       ),
     );
-  }
-
-  Widget _contactRow(
-    BuildContext context,
-    IconData icon,
-    String text,
-    VoidCallback? onTap,
-  ) {
-    final child = Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Icon(icon, size: 15, color: const Color(0xFF0FF0FC)),
-        const SizedBox(width: 10),
-        Expanded(
-          child: Text(
-            text,
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: onTap != null ? const Color(0xFF0FF0FC) : null,
-                ),
-          ),
-        ),
-      ],
-    );
-    if (onTap == null) return child;
-    return GestureDetector(onTap: onTap, child: child);
   }
 }
