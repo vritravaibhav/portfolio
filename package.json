@@ -1,0 +1,15 @@
+{
+  "name": "portfolio",
+  "private": true,
+  "type": "module",
+  "description": "Static portfolio site. No build step and no runtime dependencies — the checks below run on Node's built-in tooling alone.",
+  "scripts": {
+    "test": "node --test",
+    "check": "node scripts/check-site.js",
+    "verify": "npm test && npm run check",
+    "serve": "python3 -m http.server 8000 --directory site"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

@@ -3,6 +3,7 @@ name: Deploy to GitHub Pages
 on:
   push:
     branches: [main]
+  pull_request:
   workflow_dispatch:
 
 permissions:
@@ -18,10 +19,29 @@ env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
-  # The site is static: no toolchain, no build step, just publish site/.
-  # Paths inside the page are all relative, so it works unchanged under the
-  # /portfolio/ subpath Pages serves it from.
+  # The site has no build step, so these checks are what stands between a bad
+  # commit and production: unit tests for the contact form, then structural,
+  # asset, metadata and page-weight checks over site/. Both run on Node's
+  # built-in tooling — there is nothing to install.
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Unit tests
+        run: npm test
+
+      - name: Site checks
+        run: npm run check
+
+  # Only reached on main, and only if verify passed.
   deploy:
+    needs: verify
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     environment:
       name: github-pages
@@ -31,6 +51,8 @@ jobs:
 
       - uses: actions/configure-pages@v5
 
+      # Paths inside the page are all relative, so site/ deploys as-is under
+      # the /portfolio/ subpath Pages serves it from.
       - uses: actions/upload-pages-artifact@v3
         with:
           path: site
