@@ -1,11 +1,33 @@
 /**
- * DOM wiring: copy buttons and the contact form.
+ * DOM wiring: copy buttons and the contact form, plus booting the backdrop
+ * and the motion layer.
  *
  * All submission logic lives in contact.js, which is pure and unit-tested.
  * This file only moves values between the page and those functions.
  */
 
 import { FIELD_RULES, validate, send } from './contact.js';
+import { startBackdrop } from './backdrop.js';
+import { initMotion } from './motion.js';
+
+// Both are decoration: if either throws, the page is still a working document,
+// so neither is allowed to take the form down with it.
+try {
+  const canvas = document.querySelector('.backdrop-gl');
+  if (canvas) startBackdrop(canvas);
+} catch (error) {
+  console.warn('[backdrop] disabled:', error);
+}
+
+try {
+  initMotion();
+} catch (error) {
+  console.warn('[motion] disabled:', error);
+  // Whatever the reveal left hidden must come back.
+  for (const target of document.querySelectorAll('[data-reveal]')) {
+    target.classList.add('revealed');
+  }
+}
 
 // ─── Toast (stands in for the Flutter SnackBar) ──────────────────────────────
 

@@ -237,8 +237,11 @@ check('cold load fits the byte budget', () => {
   const rows = [];
   let total = 0;
 
+  // Discovered rather than listed, so a new module cannot slip past the budget.
+  const textAssets = readdirSync(SITE).filter((f) => /\.(html|css|js)$/.test(f));
+
   // Text assets are served compressed; binaries are already compressed.
-  for (const file of ['index.html', 'styles.css', 'fonts.css', 'main.js', 'contact.js']) {
+  for (const file of textAssets) {
     const size = gzipSync(readFileSync(path.join(SITE, file)), { level: 9 }).length;
     rows.push([`${file} (gz)`, size]);
     total += size;

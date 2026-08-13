@@ -86,7 +86,7 @@ code {
 .backdrop {
   position: fixed;
   inset: 0;
-  z-index: -1;
+  z-index: -2;
   background:
     radial-gradient(ellipse 95% 75% at 22% 8%,
       rgba(15, 240, 252, 0.165) 0%,
@@ -94,16 +94,56 @@ code {
     linear-gradient(to bottom, #101A2E 0%, #0A0E1A 50%, #070A12 100%);
 }
 
+/* The shader canvas sits over the gradient and only fades in once WebGL has
+   actually produced a frame, so a failed context is invisible rather than a
+   black rectangle. */
+.backdrop-gl {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  display: block;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  transition: opacity 1200ms var(--ease-out);
+}
+
+/* Held under 1 so the static gradient underneath keeps pulling the whole
+   backdrop darker — a second contrast control independent of the shader. */
+.backdrop-gl.ready {
+  opacity: 0.82;
+}
+
+/* ─── Entrance and scroll reveals ──────────────────────────────────────────
+   Nothing is hidden unless `has-motion` is on <html>, which the inline script
+   in <head> only sets when motion is welcome. No JS, no hidden content. */
+
+.has-motion [data-reveal] {
+  opacity: 0;
+  transform: translate3d(0, 16px, 0);
+}
+
+.has-motion [data-reveal].revealed {
+  opacity: 1;
+  transform: none;
+  transition:
+    opacity 640ms var(--ease-out) var(--reveal-delay, 0ms),
+    transform 640ms var(--ease-out) var(--reveal-delay, 0ms);
+}
+
+/* The rule beside each section title draws outward as the title lands. */
+.has-motion .section-title::after {
+  transform: scaleX(0);
+  transform-origin: left center;
+}
+
+.has-motion .section-title.revealed::after {
+  transform: scaleX(1);
+  transition: transform 760ms var(--ease-out)
+    calc(var(--reveal-delay, 0ms) + 140ms);
+}
+
 /* ─── Layout ───────────────────────────────────────────────────────────── */
-
-.layout {
-  animation: fade-in 1100ms var(--ease-out) both;
-}
-
-@keyframes fade-in {
-  from { opacity: 0; }
-  to   { opacity: 1; }
-}
 
 .rail-inner {
   padding: 48px 28px;
@@ -171,6 +211,14 @@ code {
 
 /* ─── Left rail ────────────────────────────────────────────────────────── */
 
+/* Registering the angle is what lets it interpolate; without @property the
+   custom property flips discretely and the conic gradient sits still. */
+@property --ring-angle {
+  syntax: '<angle>';
+  initial-value: 0deg;
+  inherits: false;
+}
+
 .avatar-ring {
   width: 130px;
   height: 130px;
@@ -181,6 +229,21 @@ code {
   box-shadow: 0 0 22px 1px rgba(15, 240, 252, 0.28);
 }
 
+@supports (background: conic-gradient(from 0deg, red, blue)) {
+  .avatar-ring {
+    background: conic-gradient(from var(--ring-angle),
+        #005CFF, #0FF0FC, #6EE7FF, #0FF0FC, #005CFF);
+  }
+
+  .has-motion .avatar-ring {
+    animation: ring-sweep 9s linear infinite;
+  }
+}
+
+@keyframes ring-sweep {
+  to { --ring-angle: 360deg; }
+}
+
 .avatar {
   display: block;
   width: 124px;
@@ -188,6 +251,10 @@ code {
   border-radius: 50%;
   object-fit: cover;
   background: #111827;
+}
+
+.name .line {
+  display: block;
 }
 
 .name {
@@ -460,10 +527,36 @@ a.contact-text:hover {
 /* ─── Cards ────────────────────────────────────────────────────────────── */
 
 .card {
+  position: relative;
+  overflow: hidden;
   border: 1px solid rgba(15, 240, 252, 0.12);
   border-radius: 10px;
   background: var(--bg-card);
   transition: background 200ms, border-color 200ms, box-shadow 200ms;
+}
+
+/* A highlight that tracks the pointer. motion.js writes the two coordinates;
+   everything else is the compositor's problem. */
+.card::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background: radial-gradient(340px circle at var(--pointer-x, 50%) var(--pointer-y, 0%),
+      rgba(15, 240, 252, 0.13), transparent 68%);
+  opacity: 0;
+  transition: opacity 260ms var(--ease-out);
+  pointer-events: none;
+}
+
+.card.lit::after {
+  opacity: 1;
+}
+
+/* Keep the copy above the highlight. */
+.card > * {
+  position: relative;
+  z-index: 1;
 }
 
 .card + .card {

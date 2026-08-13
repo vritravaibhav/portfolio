@@ -46,6 +46,25 @@
   <link rel="stylesheet" href="fonts.css">
   <link rel="stylesheet" href="styles.css">
 
+  <!-- Blocking on purpose and deliberately tiny. The stylesheet only hides
+       content for the entrance reveal while this class is present, so with JS
+       off nothing is ever hidden and nothing flashes in before being hidden
+       again.
+
+       The timeout is the safety net that matters: hiding content in CSS and
+       revealing it from a module means a module that never arrives leaves a
+       blank page. If motion.js has not reported ready, the class comes off and
+       the document appears regardless. -->
+  <script>
+    if (!matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      var root = document.documentElement;
+      root.classList.add('has-motion');
+      setTimeout(function () {
+        if (!root.dataset.motionReady) root.classList.remove('has-motion');
+      }, 2500);
+    }
+  </script>
+
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
@@ -130,7 +149,10 @@
     </defs>
   </svg>
 
+  <!-- Static gradient, always painted. The shader canvas layers over it and
+       fades in only once WebGL is confirmed working, so this is the fallback. -->
   <div class="backdrop" aria-hidden="true"></div>
+  <canvas class="backdrop-gl" aria-hidden="true"></canvas>
 
   <div class="layout">
 
@@ -138,20 +160,21 @@
     <aside class="rail">
       <div class="rail-inner">
 
-        <div class="avatar-ring">
+        <div class="avatar-ring" data-reveal>
           <img class="avatar" src="assets/profilepic.jpeg" width="124" height="124"
             alt="Divyanshu Vaibhav" fetchpriority="high">
         </div>
 
-        <h1 class="name">Divyanshu<br>Vaibhav</h1>
-        <p class="role">Software Engineer</p>
+        <h1 class="name" data-reveal><span class="line">Divyanshu</span><span
+            class="line">Vaibhav</span></h1>
+        <p class="role" data-reveal>Software Engineer</p>
 
-        <p class="status">
+        <p class="status" data-reveal>
           <span class="status-dot" aria-hidden="true"></span>
           <span>@ Longfloat · Dubai</span>
         </p>
 
-        <nav class="socials" aria-label="Profiles">
+        <nav class="socials" aria-label="Profiles" data-reveal>
           <a class="social" href="https://github.com/vritravaibhav" target="_blank" rel="noopener me">
             <svg class="ico" aria-hidden="true"><use href="#i-github" /></svg><span>GitHub</span>
           </a>
@@ -160,8 +183,8 @@
           </a>
         </nav>
 
-        <h2 class="side-label">// contact</h2>
-        <ul class="contact-list">
+        <h2 class="side-label" data-reveal>// contact</h2>
+        <ul class="contact-list" data-reveal>
           <li class="contact-line">
             <svg class="ico line-ico" aria-hidden="true"><use href="#i-phone" /></svg>
             <a class="contact-text" href="tel:+919576671336">+91 9576671336</a>
@@ -182,15 +205,15 @@
           </li>
         </ul>
 
-        <h2 class="side-label">// education</h2>
-        <div class="education">
+        <h2 class="side-label" data-reveal>// education</h2>
+        <div class="education" data-reveal>
           <p class="edu-degree">B.E. Electronics &amp; Communication</p>
           <p class="edu-school">Panjab University</p>
           <p class="edu-years">2020 – 2024</p>
         </div>
 
-        <h2 class="side-label">// skills</h2>
-        <div class="skills">
+        <h2 class="side-label" data-reveal>// skills</h2>
+        <div class="skills" data-reveal>
           <h3 class="skill-group">BACKEND</h3>
           <ul class="chips">
             <li class="chip">Java</li>
@@ -251,8 +274,8 @@
           </ul>
         </div>
 
-        <h2 class="side-label">// problem solving</h2>
-        <ul class="arrows">
+        <h2 class="side-label" data-reveal>// problem solving</h2>
+        <ul class="arrows" data-reveal>
           <li>Solved 400+ DSA problems on LeetCode and Codeforces (Java / Dart)</li>
           <li>Ranked #5,466 worldwide — Codeforces Round 889 (Div. 2)</li>
         </ul>
@@ -266,9 +289,9 @@
     <main class="stream">
       <div class="stream-inner">
 
-        <h2 class="section-title"><span>Experience</span></h2>
+        <h2 class="section-title" data-reveal><span>Experience</span></h2>
 
-        <article class="card exp is-active">
+        <article class="card exp is-active" data-reveal>
           <div class="exp-bar" aria-hidden="true"></div>
           <div class="card-body">
             <header class="exp-head">
@@ -293,7 +316,7 @@
           </div>
         </article>
 
-        <article class="card exp">
+        <article class="card exp" data-reveal>
           <div class="exp-bar" aria-hidden="true"></div>
           <div class="card-body">
             <header class="exp-head">
@@ -321,7 +344,7 @@
           </div>
         </article>
 
-        <article class="card exp">
+        <article class="card exp" data-reveal>
           <div class="exp-bar" aria-hidden="true"></div>
           <div class="card-body">
             <header class="exp-head">
@@ -340,7 +363,7 @@
           </div>
         </article>
 
-        <article class="card exp">
+        <article class="card exp" data-reveal>
           <div class="exp-bar" aria-hidden="true"></div>
           <div class="card-body">
             <header class="exp-head">
@@ -358,9 +381,9 @@
           </div>
         </article>
 
-        <h2 class="section-title"><span>Projects</span></h2>
+        <h2 class="section-title" data-reveal><span>Projects</span></h2>
 
-        <article class="card">
+        <article class="card" data-reveal>
           <div class="card-body">
             <header class="card-head">
               <p class="stack">Spring Boot · Spring Data JPA · MySQL · Flutter · LLM APIs</p>
@@ -381,7 +404,7 @@
           </div>
         </article>
 
-        <article class="card">
+        <article class="card" data-reveal>
           <div class="card-body">
             <header class="card-head">
               <p class="stack">Spring Boot · WebSocket/STOMP · WebRTC · Flutter Wasm · LLM APIs</p>
@@ -402,9 +425,9 @@
           </div>
         </article>
 
-        <h2 class="section-title"><span>Contribution</span></h2>
+        <h2 class="section-title" data-reveal><span>Contribution</span></h2>
 
-        <article class="card">
+        <article class="card" data-reveal>
           <div class="card-body">
             <header class="card-head">
               <p class="stack">Dart · CLI · pub.dev · v1.0.0 · MIT</p>
@@ -430,9 +453,9 @@
           </div>
         </article>
 
-        <h2 class="section-title"><span>Contact</span></h2>
+        <h2 class="section-title" data-reveal><span>Contact</span></h2>
 
-        <div class="card pad">
+        <div class="card pad" data-reveal>
           <h3 class="card-title">Get in touch</h3>
           <form id="contact-form" novalidate>
             <div class="field">
@@ -463,7 +486,7 @@
           </form>
         </div>
 
-        <div class="card pad">
+        <div class="card pad" data-reveal>
           <h3 class="card-title">Divyanshu Vaibhav</h3>
           <ul class="contact-list wide">
             <li class="contact-line">
