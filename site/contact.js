@@ -8,39 +8,47 @@
  * rather than ambient calls, which is what makes the payload assertable.
  */
 
-export const CONTACT_EMAIL = 'divaibhavyanshu@gmail.com';
-export const PROJECT_ID = 'port-fol-io';
-
 /**
- * Not a secret: it identifies the Firebase project rather than authorising
- * anything, it was already public inside the old Flutter bundle, and every
- * write is still governed by the Firestore security rules.
+ * Messages go to the Firebase project behind the owner's Arclight app, which
+ * shows them and notifies the owner's phone. Its security rules
+ * (firestore.rules in the patentanalystcompany repo) let anyone create one
+ * message with exactly the fields below, and nobody but the owner read it.
+ * No API key is needed: an unauthenticated write is judged by those rules.
  */
-export const API_KEY = 'AIzaSyDpbsuZ6GMrAOX7dZNqwlgftpsOySXSg8g';
+export const PROJECT_ID = 'chrome-1st-extension';
+export const COLLECTION = 'portfolio_messages';
 
 export const COMMIT_URL =
   `https://firestore.googleapis.com/v1/projects/${PROJECT_ID}` +
-  `/databases/(default)/documents:commit?key=${API_KEY}`;
+  `/databases/(default)/documents:commit`;
 
 const DOC_ROOT = `projects/${PROJECT_ID}/databases/(default)/documents/`;
 
 // ─── Validation ──────────────────────────────────────────────────────────────
 
-/** Deliberately liberal: the delivery attempt is the real check. */
-const EMAIL_PATTERN = /^[^@]+@[^@]+\.[^@]+/;
+/** Deliberately liberal, and the same pattern the security rules apply. */
+const EMAIL_PATTERN = /^[^@]+@[^@]+\.[^@]+$/;
+
+/** The longest each field may be; the security rules refuse anything longer. */
+export const MAX_LENGTH = { name: 200, email: 320, subject: 300, message: 5000 };
+
+const tooLong = (field, v) =>
+  v.length > MAX_LENGTH[field]
+    ? `Please keep this under ${MAX_LENGTH[field].toLocaleString('en')} characters`
+    : null;
 
 /**
  * Field order matters — it decides which field receives focus when several are
  * invalid at once. Messages are carried over verbatim from the Dart validators.
  */
 export const FIELD_RULES = [
-  ['name', (v) => (v ? null : 'Please enter your name')],
+  ['name', (v) => (v ? tooLong('name', v) : 'Please enter your name')],
   ['email', (v) => {
     if (!v) return 'Please enter your email';
-    return EMAIL_PATTERN.test(v) ? null : 'Please enter a valid email';
+    return EMAIL_PATTERN.test(v) ? tooLong('email', v) : 'Please enter a valid email';
   }],
-  ['subject', (v) => (v ? null : 'Please enter the subject')],
-  ['message', (v) => (v ? null : 'Please enter your message')],
+  ['subject', (v) => (v ? tooLong('subject', v) : 'Please enter the subject')],
+  ['message', (v) => (v ? tooLong('message', v) : 'Please enter your message')],
 ];
 
 /**
@@ -65,14 +73,6 @@ export function validate(values) {
 
 // ─── Payload construction ────────────────────────────────────────────────────
 
-/** Mirrors `_esc` in the Dart original — quotes are left alone there too. */
-export function escapeHtml(value) {
-  return value
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;');
-}
-
 const ID_ALPHABET =
   'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
 
@@ -91,43 +91,29 @@ export function autoId(randomBytes = (n) => crypto.getRandomValues(new Uint8Arra
 }
 
 const str = (stringValue) => ({ stringValue });
-const strArray = (list) => ({ arrayValue: { values: list.map(str) } });
-const map = (fields) => ({ mapValue: { fields } });
 
 /**
- * Builds the single atomic commit that replaces the Dart version's two
- * sequential `.add()` calls: the submission log and the queued notification
- * email now either both land or neither does.
+ * Builds the commit that saves one message: exactly the fields the security
+ * rules accept, with `createdAt` set by the server.
  *
- * `currentDocument: {exists: false}` makes each write a create rather than an
- * overwrite, so a colliding ID fails loudly instead of clobbering a record.
+ * `currentDocument: {exists: false}` makes the write a create rather than an
+ * overwrite, so a colliding ID fails loudly instead of clobbering a message
+ * (and the rules only allow creating one anyway).
  *
  * @param {{name: string, email: string, subject: string, message: string}} values
- * @param {{formId: string, mailId: string}} ids
+ * @param {{messageId: string}} ids
  */
 export function buildCommit(values, ids) {
-  const name = values.name.trim();
-  const email = values.email.trim();
-  const subject = values.subject.trim();
-  const message = values.message.trim();
-
-  const html =
-    `<p><strong>From:</strong> ${escapeHtml(name)} ` +
-    `(<a href="mailto:${escapeHtml(email)}">${escapeHtml(email)}</a>)</p>` +
-    `<p><strong>Subject:</strong> ${escapeHtml(subject)}</p>` +
-    '<hr>' +
-    `<p>${escapeHtml(message).replace(/\n/g, '<br>')}</p>`;
-
   return {
     writes: [
       {
         update: {
-          name: `${DOC_ROOT}form/${ids.formId}`,
+          name: `${DOC_ROOT}${COLLECTION}/${ids.messageId}`,
           fields: {
-            name: str(name),
-            email: str(email),
-            subject: str(subject),
-            description: str(message),
+            name: str(values.name.trim()),
+            email: str(values.email.trim()),
+            subject: str(values.subject.trim()),
+            message: str(values.message.trim()),
           },
         },
         // The REST equivalent of FieldValue.serverTimestamp(): the field is
@@ -135,27 +121,6 @@ export function buildCommit(values, ids) {
         updateTransforms: [
           { fieldPath: 'createdAt', setToServerValue: 'REQUEST_TIME' },
         ],
-        currentDocument: { exists: false },
-      },
-      {
-        update: {
-          name: `${DOC_ROOT}mail/${ids.mailId}`,
-          fields: {
-            to: strArray([CONTACT_EMAIL]),
-            replyTo: str(email),
-            // Consumed by the "Trigger Email from Firestore" extension, which
-            // dictates this exact shape.
-            message: map({
-              subject: str(`Portfolio enquiry: ${subject}`),
-              text: str(
-                `From: ${name} <${email}>\n` +
-                `Subject: ${subject}\n\n` +
-                message
-              ),
-              html: str(html),
-            }),
-          },
-        },
         currentDocument: { exists: false },
       },
     ],
@@ -169,7 +134,7 @@ export function buildCommit(values, ids) {
  * `fetchImpl` is injectable so tests never touch the network.
  */
 export async function send(values, { fetchImpl = fetch, ids } = {}) {
-  const documentIds = ids ?? { formId: autoId(), mailId: autoId() };
+  const documentIds = ids ?? { messageId: autoId() };
 
   const response = await fetchImpl(COMMIT_URL, {
     method: 'POST',

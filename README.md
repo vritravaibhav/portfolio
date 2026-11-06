@@ -61,11 +61,11 @@ With no build step, nothing would otherwise catch a renamed asset or a dropped
 meta tag until it was live. CI runs both suites on every push and pull request,
 and `deploy` only runs if they pass.
 
-`npm test` — 31 unit tests over `site/contact.js`. The valuable ones pin the
-Firestore payload: the `mail` document shape is dictated by the Firebase
-Trigger Email extension, and a wrong field name there fails silently at send
-time rather than loudly at build time. Nondeterminism (document IDs, `fetch`)
-is injected, so the exact request body is assertable.
+`npm test` — 23 unit tests over `site/contact.js`. The valuable ones pin the
+Firestore payload: the security rules accept exactly these fields and lengths
+and a server-set `createdAt`, and refuse anything else with a bare "permission
+denied" at send time rather than loudly at build time. Nondeterminism
+(document IDs, `fetch`) is injected, so the exact request body is assertable.
 
 `npm run check` — 12 checks over `site/`:
 
@@ -85,19 +85,22 @@ pass when everything is fine.
 
 ## Contact form
 
-Posts straight to the Firestore REST API, writing one document to `form` (the
-submission log) and one to `mail`, which the Firebase "Trigger Email from
-Firestore" extension picks up and delivers.
+Posts straight to the Firestore REST API of `chrome-1st-extension`, the
+Firebase project behind the owner's Arclight app (the `patentanalystcompany`
+repo). Each message becomes one document in `portfolio_messages`; the app lists
+them under Team → Companies → Portfolio and notifies the owner's phone (the
+devices helper on the Mac sends the notification). There is no email any more:
+the old `port-fol-io` project and its Trigger Email extension are retired.
 
-Both writes go in a single atomic commit, so the log and the queued email can't
-diverge — an improvement over the Flutter version, which issued two sequential
-writes. Each write is a create (`currentDocument: {exists: false}`), so an ID
-collision fails loudly instead of overwriting a record, and `createdAt` is set
-by the server rather than trusting the client clock.
+The write is a create (`currentDocument: {exists: false}`), so an ID collision
+fails loudly instead of overwriting a message, and `createdAt` is set by the
+server rather than trusting the client clock.
 
-The Web API key in `contact.js` is not a secret. It identifies the project
-rather than authorising anything, it was already public inside the old Flutter
-bundle, and every write is governed by the Firestore security rules.
+No API key is needed. The project's security rules (`firestore.rules` in
+`patentanalystcompany`) let anyone create one message with exactly `name`,
+`email`, `subject`, `message` and a server-set `createdAt`, within the lengths
+in `MAX_LENGTH`, and let nobody but the owner read one. The form checks the
+same limits first, so a visitor sees a clear message instead of a refusal.
 
 ## Deploying
 

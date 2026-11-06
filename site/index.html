@@ -459,22 +459,22 @@
           <h3 class="card-title">Get in touch</h3>
           <form id="contact-form" novalidate>
             <div class="field">
-              <input type="text" id="f-name" name="name" placeholder=" " autocomplete="name" required>
+              <input type="text" id="f-name" maxlength="200" name="name" placeholder=" " autocomplete="name" required>
               <label for="f-name">Name</label>
               <p class="error" data-for="f-name"></p>
             </div>
             <div class="field">
-              <input type="email" id="f-email" name="email" placeholder=" " autocomplete="email" required>
+              <input type="email" id="f-email" maxlength="320" name="email" placeholder=" " autocomplete="email" required>
               <label for="f-email">Email</label>
               <p class="error" data-for="f-email"></p>
             </div>
             <div class="field">
-              <input type="text" id="f-subject" name="subject" placeholder=" " required>
+              <input type="text" id="f-subject" maxlength="300" name="subject" placeholder=" " required>
               <label for="f-subject">Subject</label>
               <p class="error" data-for="f-subject"></p>
             </div>
             <div class="field">
-              <textarea id="f-message" name="message" rows="4" placeholder=" " required></textarea>
+              <textarea id="f-message" maxlength="5000" name="message" rows="4" placeholder=" " required></textarea>
               <label for="f-message">Message</label>
               <p class="error" data-for="f-message"></p>
             </div>

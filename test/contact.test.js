@@ -5,22 +5,22 @@
  *
  *     npm test
  *
- * The point of these is the payload: the `mail` document shape is dictated by
- * the Firebase "Trigger Email from Firestore" extension, and getting a field
- * name wrong there fails silently at send time rather than loudly at build
- * time. Pinning it here is the only cheap way to catch that.
+ * The point of these is the payload: the security rules in front of the
+ * Firebase project accept exactly these fields, lengths and a server-set
+ * createdAt, and refuse anything else with a bare "permission denied" at send
+ * time. Pinning the shape here catches that at build time instead.
  */
 
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import {
-  API_KEY,
+  COLLECTION,
   COMMIT_URL,
-  CONTACT_EMAIL,
+  MAX_LENGTH,
+  PROJECT_ID,
   autoId,
   buildCommit,
-  escapeHtml,
   send,
   validate,
 } from '../site/contact.js';
@@ -32,7 +32,7 @@ const VALID = {
   message: 'Hello there.',
 };
 
-const IDS = { formId: 'formDoc0000000000001', mailId: 'mailDoc0000000000001' };
+const IDS = { messageId: 'messageDoc0000000001' };
 
 // ─── Validation ──────────────────────────────────────────────────────────────
 
@@ -93,20 +93,17 @@ test('accepts addresses that trip up naive patterns', () => {
   }
 });
 
-// ─── Escaping ────────────────────────────────────────────────────────────────
-
-test('escapes the three characters the Dart original escaped', () => {
-  assert.equal(escapeHtml('<b>&</b>'), '&lt;b&gt;&amp;&lt;/b&gt;');
-});
-
-test('escapes ampersands before angle brackets, so entities survive one pass', () => {
-  // Wrong order yields '&lt;' -> '&amp;lt;' only if & is escaped second.
-  assert.equal(escapeHtml('<'), '&lt;');
-  assert.equal(escapeHtml('&lt;'), '&amp;lt;');
-});
-
-test('leaves quotes alone, matching the Dart behaviour', () => {
-  assert.equal(escapeHtml('say "hi"'), 'say "hi"');
+test('refuses what the security rules would refuse, with a message', () => {
+  const long = (n) => 'x'.repeat(n);
+  assert.equal(validate({ ...VALID, message: long(MAX_LENGTH.message) }).valid, true);
+  assert.equal(
+    validate({ ...VALID, message: long(MAX_LENGTH.message + 1) }).errors.message,
+    'Please keep this under 5,000 characters'
+  );
+  assert.equal(validate({ ...VALID, name: long(201) }).firstInvalid, 'name');
+  assert.equal(validate({ ...VALID, subject: long(301) }).firstInvalid, 'subject');
+  assert.equal(validate({ ...VALID, email: `${long(320)}@example.com` }).firstInvalid, 'email');
+  assert.equal(validate({ ...VALID, email: 'a@b.co@x' }).errors.email, 'Please enter a valid email');
 });
 
 // ─── Document IDs ────────────────────────────────────────────────────────────
@@ -129,40 +126,39 @@ test('produces distinct IDs from real entropy', () => {
 
 // ─── Commit payload ──────────────────────────────────────────────────────────
 
-test('writes the log and the queued email in one atomic commit', () => {
+test('saves exactly one message, in the messages collection of the right project', () => {
   const { writes } = buildCommit(VALID, IDS);
-  assert.equal(writes.length, 2);
+  assert.equal(writes.length, 1);
+  assert.equal(
+    writes[0].update.name,
+    `projects/chrome-1st-extension/databases/(default)/documents/portfolio_messages/${IDS.messageId}`
+  );
 });
 
-test('addresses both documents to the right project and collection', () => {
-  const [log, mail] = buildCommit(VALID, IDS).writes;
-  const root = 'projects/port-fol-io/databases/(default)/documents';
-
-  assert.equal(log.update.name, `${root}/form/${IDS.formId}`);
-  assert.equal(mail.update.name, `${root}/mail/${IDS.mailId}`);
+test('sends only the fields the security rules accept', () => {
+  const [write] = buildCommit(VALID, IDS).writes;
+  assert.deepEqual(Object.keys(write.update.fields).sort(), ['email', 'message', 'name', 'subject']);
 });
 
 test('creates rather than overwrites, so an ID collision fails loudly', () => {
-  for (const write of buildCommit(VALID, IDS).writes) {
-    assert.deepEqual(write.currentDocument, { exists: false });
-  }
+  assert.deepEqual(buildCommit(VALID, IDS).writes[0].currentDocument, { exists: false });
 });
 
 test('defers createdAt to the server instead of trusting the client clock', () => {
-  const [log] = buildCommit(VALID, IDS).writes;
+  const [write] = buildCommit(VALID, IDS).writes;
 
-  assert.deepEqual(log.updateTransforms, [
+  assert.deepEqual(write.updateTransforms, [
     { fieldPath: 'createdAt', setToServerValue: 'REQUEST_TIME' },
   ]);
   // A server-set field must not also be present in `fields`.
-  assert.equal(log.update.fields.createdAt, undefined);
+  assert.equal(write.update.fields.createdAt, undefined);
 });
 
-test('stores the message verbatim in the log, under the Dart field name', () => {
-  const values = { ...VALID, message: 'raw <angle> & amp' };
-  const [log] = buildCommit(values, IDS).writes;
+test('stores the message verbatim', () => {
+  const values = { ...VALID, message: 'raw <angle> & amp\nsecond line' };
+  const [write] = buildCommit(values, IDS).writes;
 
-  assert.deepEqual(log.update.fields.description, { stringValue: 'raw <angle> & amp' });
+  assert.deepEqual(write.update.fields.message, { stringValue: 'raw <angle> & amp\nsecond line' });
 });
 
 test('trims every field before persisting it', () => {
@@ -172,72 +168,12 @@ test('trims every field before persisting it', () => {
     subject: '  Subject  ',
     message: '  Body  ',
   };
-  const [log] = buildCommit(padded, IDS).writes;
+  const [write] = buildCommit(padded, IDS).writes;
 
-  assert.deepEqual(log.update.fields.name, { stringValue: 'Ada' });
-  assert.deepEqual(log.update.fields.email, { stringValue: 'ada@example.com' });
-  assert.deepEqual(log.update.fields.subject, { stringValue: 'Subject' });
-  assert.deepEqual(log.update.fields.description, { stringValue: 'Body' });
-});
-
-test('builds the exact envelope the Trigger Email extension expects', () => {
-  const [, mail] = buildCommit(VALID, IDS).writes;
-  const fields = mail.update.fields;
-
-  assert.deepEqual(fields.to, {
-    arrayValue: { values: [{ stringValue: CONTACT_EMAIL }] },
-  });
-  assert.deepEqual(fields.replyTo, { stringValue: VALID.email });
-  assert.deepEqual(Object.keys(fields.message.mapValue.fields).sort(), [
-    'html',
-    'subject',
-    'text',
-  ]);
-});
-
-test('prefixes the email subject so replies are filterable', () => {
-  const [, mail] = buildCommit(VALID, IDS).writes;
-
-  assert.equal(
-    mail.update.fields.message.mapValue.fields.subject.stringValue,
-    'Portfolio enquiry: Analytical Engine'
-  );
-});
-
-test('sets replyTo to the sender so replying reaches them, not the site', () => {
-  const [, mail] = buildCommit({ ...VALID, email: 'someone@else.test' }, IDS).writes;
-  assert.equal(mail.update.fields.replyTo.stringValue, 'someone@else.test');
-});
-
-test('escapes sender-controlled text in the HTML body', () => {
-  const hostile = {
-    ...VALID,
-    name: '<script>alert(1)</script>',
-    subject: 'a & b',
-    message: 'x < y',
-  };
-  const html = buildCommit(hostile, IDS)
-    .writes[1].update.fields.message.mapValue.fields.html.stringValue;
-
-  assert.ok(!html.includes('<script>'), 'raw script tag reached the email body');
-  assert.ok(html.includes('&lt;script&gt;alert(1)&lt;/script&gt;'));
-  assert.ok(html.includes('a &amp; b'));
-  assert.ok(html.includes('x &lt; y'));
-});
-
-test('keeps the plain-text part unescaped, as the Dart version did', () => {
-  const text = buildCommit({ ...VALID, name: 'A <b> C' }, IDS)
-    .writes[1].update.fields.message.mapValue.fields.text.stringValue;
-
-  assert.ok(text.includes('From: A <b> C <ada@example.com>'));
-});
-
-test('turns newlines into line breaks in HTML but leaves them in text', () => {
-  const values = { ...VALID, message: 'one\ntwo' };
-  const { fields } = buildCommit(values, IDS).writes[1].update.fields.message.mapValue;
-
-  assert.ok(fields.html.stringValue.includes('one<br>two'));
-  assert.ok(fields.text.stringValue.includes('one\ntwo'));
+  assert.deepEqual(write.update.fields.name, { stringValue: 'Ada' });
+  assert.deepEqual(write.update.fields.email, { stringValue: 'ada@example.com' });
+  assert.deepEqual(write.update.fields.subject, { stringValue: 'Subject' });
+  assert.deepEqual(write.update.fields.message, { stringValue: 'Body' });
 });
 
 test('serialises to JSON without losing anything', () => {
@@ -291,14 +227,16 @@ test('falls back to the status line when the error body is not JSON', async () =
   );
 });
 
-test('generates its own IDs when none are supplied', async () => {
+test('generates its own ID when none is supplied', async () => {
   const seen = [];
-  await send(VALID, {
-    fetchImpl: async (_url, options) => {
-      seen.push(...JSON.parse(options.body).writes.map((w) => w.update.name));
-      return { ok: true };
-    },
-  });
+  for (let i = 0; i < 2; i++) {
+    await send(VALID, {
+      fetchImpl: async (_url, options) => {
+        seen.push(...JSON.parse(options.body).writes.map((w) => w.update.name));
+        return { ok: true };
+      },
+    });
+  }
 
   assert.equal(seen.length, 2);
   assert.notEqual(seen[0], seen[1]);
@@ -307,10 +245,11 @@ test('generates its own IDs when none are supplied', async () => {
 
 // ─── Configuration ───────────────────────────────────────────────────────────
 
-test('commit URL carries the project and key Firestore requires', () => {
+test('commit URL names the project, and needs no API key', () => {
   const url = new URL(COMMIT_URL);
   assert.equal(url.origin, 'https://firestore.googleapis.com');
-  assert.ok(url.pathname.includes('/projects/port-fol-io/'));
+  assert.ok(url.pathname.includes(`/projects/${PROJECT_ID}/`));
   assert.ok(url.pathname.endsWith(':commit'));
-  assert.equal(url.searchParams.get('key'), API_KEY);
+  assert.equal(url.search, '');
+  assert.equal(COLLECTION, 'portfolio_messages');
 });
